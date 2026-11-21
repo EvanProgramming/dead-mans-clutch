@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="580" viewBox="0 0 800 580" fill="none">
+<title>A spectral driver bursts from a number thirteen muscle car on a clay speedway</title>
+<defs>
+ <pattern id="halftone" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-21)"><circle cx="2.4" cy="2.4" r="1.55" fill="#15201c"/></pattern>
+ <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(29)"><path d="M0 0V7" stroke="#18231e" stroke-width="2.4"/></pattern>
+ <pattern id="tire" width="10" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(25)"><path d="M0 0V8" stroke="#6b7461" stroke-width="2"/></pattern>
+ <pattern id="check" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(-18)"><path d="M0 0h12v12H0zm12 12h12v12H12z" fill="#d1c9a8"/></pattern>
+ <g id="star"><path d="m0-10 2 7 7 3-7 2-2 8-2-8-7-2 7-3z" fill="#d5dfc2"/></g>
+ <g id="wheel">
+  <ellipse cx="3" cy="3" rx="39" ry="47" fill="#101713" stroke="#101713" stroke-width="7"/>
+  <ellipse rx="37" ry="46" fill="#202822" stroke="#a6a68b" stroke-width="2.5"/>
+  <ellipse rx="32" ry="41" fill="url(#tire)"/><ellipse rx="28" ry="37" fill="#111a16" stroke="#747a62" stroke-width="2"/>
+  <ellipse rx="21" ry="28" fill="#b7ae8c" stroke="#151c18" stroke-width="4"/><ellipse rx="15" ry="21" fill="#414a3d"/>
+  <path d="m0-19 4 13 8-8-5 13 10 1-12 4 7 12-11-8-3 12-3-15-10 6 8-12-9-6 12 1z" fill="#d0c6a6"/>
+  <ellipse rx="5" ry="8" fill="#151d18" stroke="#999d80" stroke-width="2"/>
+  <path d="M-25-22q10-20 28-18m13 72q-11 11-23 10" stroke="#d8cfac" stroke-width="2" stroke-linecap="round"/>
+ </g>
+ <g id="lamp"><ellipse rx="13" ry="17" fill="#141b17" stroke="#b7b195" stroke-width="2.5"/><ellipse rx="9.5" ry="13" fill="#e2d7a5"/><path d="M-6-8 3-11m-9 14 12-8M-3 9l9-5" stroke="#a3936a" stroke-width="2"/></g>
+</defs>
+<!-- Offset inks and an imperfect printed moon -->
+<g transform="rotate(-13 470 285)">
+ <circle cx="481" cy="253" r="199" fill="#b85a3d"/>
+ <path d="M283 290q85 64 202 50 109-14 190-88a200 200 0 0 1-392 38" fill="#984b36"/>
+ <path d="M296 319q107 87 241 37 101-39 145-118c8 132-88 221-201 221-82 0-146-45-185-140" fill="url(#halftone)"/>
+ <path d="M306 152a200 200 0 0 1 96-86M590 84a204 204 0 0 1 80 94" stroke="#ee8a59" stroke-width="2.3" stroke-dasharray="71 4 11 2"/>
+ <path d="M608 108a185 185 0 0 1 46 62" stroke="#222c25" stroke-width="2"/>
+</g>
+<g stroke-linecap="round">
+ <path d="m96 382 173-40m-127 68 164-40M55 426l98-25M585 301l155-43m-89 27 100-17M591 328l183-46m-99 87 100-36" stroke="#727d68" stroke-width="2.4"/>
+ <path d="m107 412 165-38m345-70 127-31m-95 58 115-34" stroke="#c8c4a5" stroke-width="3.2"/>
+ <path d="m59 446 126-33m443-54 145-44M207 335l96-17" stroke="#c55f3f" stroke-width="5"/>
+</g>
+<!-- Torn wisps behind the helmet -->
+<path d="M610 365q21-23 35-25-13-9-9-26 16 13 42 7 55-11 72-49-18 13-41 13 39-14 43-43-21 20-50 15 40-23 33-76-6 34-40 45 14-24 8-42 0 31-32 42 35-49 0-83 12 33-17 54 11-45-15-64 7 24-10 44-3-38-34-47 15 24 8 43-15-16-34-16 26 23 9 51l-32 53z" fill="#9eae94" stroke="#17221c" stroke-width="5"/>
+<path d="M596 299q59 18 84-24-25 9-37 2 55-18 47-54-16 30-43 34 12-17 9-30-12 19-34 23 9-20 1-37-8 27-36 33z" fill="#dce6be"/>
+<!-- Ghost rising from a bonnet, flowing in a big S silhouette -->
+<path d="M566 365q-17-26-51-30-29-4-45-26-16-22-9-42l-20-27q-25-25-24-61 0-26 18-47 17-21 51-24 32-3 54 13 23 17 28 47 3 19-5 40 15-8 19-22 6 23-8 42 18 0 28-17-1 36-27 55 15 6 36-2-10 22-35 31 19 8 48-3-11 20-41 28-20 6-17 16 13 13 34 9-6 22-34 20z" fill="#b8cba9" stroke="#17211c" stroke-width="6" stroke-linejoin="round"/>
+<path d="M472 270q-4 31 25 49 20 13 34 9-36-12-37-27 23 12 46 3 34-16 43-33-15 9-29 5 18-12 22-31l-42 6z" fill="#768f78"/>
+<path d="M484 282q22 9 36 0c-8 12-23 15-33 8m29 30q23 1 38-10m-2 36q6 7 21 10" stroke="#526e5b" stroke-width="3" stroke-linecap="round"/>
+<!-- Open-face race helmet and skull -->
+<g transform="rotate(-15 487 192)" stroke-linejoin="round">
+ <path d="M412 190q-9-27 4-54 14-29 51-36 35-9 64 10 24 18 27 49l-4 30-14 17-20-28-48 1-38 23z" fill="#e3d8b7" stroke="#17201b" stroke-width="6"/>
+ <path d="M416 161q9-43 55-53 21-5 38 2-33 0-53 20-15 13-17 31z" fill="#b2a98b"/>
+ <path d="M443 156q7-30 32-46l13-4q-25 21-29 48z" fill="#bf5035"/>
+ <path d="M458 153q7-31 33-47l6 1q-22 18-30 46z" fill="#333d31"/>
+ <path d="M403 181q32-27 86-30 26-2 44 6l6 12q-39-6-71 5l-50 20z" fill="#111b16" stroke="#101712" stroke-width="5"/>
+ <path d="M408 181q43-26 98-27" stroke="#efe6c9" stroke-width="4"/>
+ <path d="M422 197q2-8 15-14 36-18 74-12l20 15 1 19-5 19-16 12-4 20-14 11-13 1-9-11-15 5-19-7-4-16-11-8-1-10-7-8z" fill="#e1e6bd" stroke="#17231d" stroke-width="5"/>
+ <path d="M424 202q10-13 24-13l-1 17-8 10-11-1-5-6zm35-10q16-11 33-8l8 7-9 16-23 5-11-5z" fill="#1e2c24"/>
+ <path d="m441 200 3-4-1 9-5 4zm34-2 7-6-4 11-5 2z" fill="#c9e3ba"/>
+ <path d="m449 211-8 14 10-3 4 4 2-5z" fill="#354835"/>
+ <path d="m503 203 9-10-1 16-10 9 7-2-4 11-8 6-4-11z" fill="#819a7c"/>
+ <path d="m426 231 17 4 24-1 20-12-3 15-12 11-21 2-19-7z" fill="#223026"/>
+ <path d="m434 234 4 8 4 1-1-8m7 1 3 9 4 1-1-10m8-2 2 8 4-1 1-10m7-3 1 8 4-4 2-9" fill="#dce3ba"/>
+ <path d="m439 250 16 4 22-4m5 7 8-5 5-9" stroke="#637a63" stroke-width="3"/>
+ <path d="m526 160 15-1 9 17-2 19-11 11-12-5-5-13z" fill="#aa9e7c" stroke="#15221a" stroke-width="4"/>
+ <ellipse cx="536" cy="184" rx="8" ry="12" fill="#505849" stroke="#d7cbae" stroke-width="3"/>
+</g>
+<!-- The car's shadow and spray of shale -->
+<path d="m98 501 107-31 403-118 102 10-86 55-293 100-140 6z" fill="#111915"/>
+<path d="m137 515 188-30-52 22-125 20zm282-7 87-42 93-22-43 29z" fill="#61715d"/>
+<g fill="#b7b497"><path d="m649 408 50-14-40 19zm-69 38 73-15-56 19zm-454 53 23-8-15 12zm573-105 17-9-7 11zm-59 45 24-13-11 12z"/></g>
+<!-- Rear wheels, offside tire -->
+<g transform="translate(228 439) rotate(15)"><use href="#wheel" transform="scale(.79 1)"/></g>
+<g transform="translate(640 355) rotate(19)"><use href="#wheel" transform="scale(.84 .86)"/></g>
+<!-- Fastback body: tail at upper right, nose lower left -->
+<path d="m173 378 45-24 85-18 75-54 92-37 65 2 74 37 48 5 23 13-1 35-20 20q0-33-15-34-24-2-40 54l-128 65-55 26-153 10-110-30-5-37z" fill="#181e19" stroke="#121914" stroke-width="9" stroke-linejoin="round"/>
+<path d="m460 254 57-8 69 32 57 11-9 11-120 29-94-17z" fill="#d7c9a6"/>
+<path d="m482 253 31-4 58 30-8 4zm71 44 35-13 27 5-31 11z" fill="#535c4b"/>
+<path d="m172 378 49-20 86-20 52-16 93 8 45 32-37 54-32 15-152 7-111-17z" fill="#d8754c" stroke="#22241b" stroke-width="4"/>
+<path d="m189 379 129-35 78-10 46 5-174 53z" fill="#e59060"/>
+<path d="m239 383 113-34 47-8-124 44zm55 9 111-36 30-8-96 44z" fill="#8c4232"/>
+<path d="m271 390 133-45 14-2-128 49z" fill="#e4ceb0"/>
+<path d="m181 395 87 9 77-4-48 16-118-4z" fill="#e99764"/>
+<path d="m171 417 108 13 143-10 42-18-4 37-42 22-145 11-108-29z" fill="#a54832" stroke="#18211a" stroke-width="4"/>
+<!-- Hood scoop -->
+<path d="m285 364 38-14 43-3 22 7-36 15-50 6-20-3z" fill="#17231a" stroke="#e69a6a" stroke-width="2.7"/>
+<path d="m286 365 42-12 36-3 14 4-45 5-28 10z" fill="#aba68c"/>
+<path d="m306 368 31-9 31-2-22 8z" fill="#32392d"/>
+<!-- Windshield, roof and profile -->
+<path d="m314 335 50-49 82-36 66-3 48 29-44 44-44 33-22-20z" fill="#ce6e4c" stroke="#18231a" stroke-width="4.5"/>
+<path d="m326 332 44-41 62-24 62 5-48 54-72 1z" fill="#aebba2" stroke="#29352a" stroke-width="5"/>
+<path d="m335 327 41-34 55-21 26 3-71 47z" fill="#435349"/>
+<path d="m364 318 17-21 35-16-26 26zm56 5 39-45 16-1-37 46z" fill="#dce0bb"/>
+<path d="m348 330 34-5 33 2m-26-4 33-5" stroke="#18271f" stroke-width="3"/>
+<path d="m395 272 51-22 61-2 37 20-41 3-52-12z" fill="#efad75"/>
+<path d="m433 259 16-6 54-2 29 15-16 1-25-10z" fill="#303a2e"/>
+<path d="m460 333 43-57 44-3 37 19-14 21-93 42z" fill="#8c4434" stroke="#17221c" stroke-width="4"/>
+<path d="m476 326 31-45 27-2-3 29z" fill="#394c42" stroke="#c4b69a" stroke-width="3"/>
+<path d="m538 306 3-28 11 1 24 14z" fill="#92a591" stroke="#2c3a2c" stroke-width="3"/>
+<path d="m481 321 28-32-15 31z" fill="#a1b49a"/>
+<!-- Side panels and racing stripes -->
+<path d="m449 362 45-26 84-34 63-15 28 8-1 28-13 14q1-21-11-23-25-3-44 57l-120 64-31 13-19-18z" fill="#c66442" stroke="#1a231d" stroke-width="5"/>
+<path d="m460 379 119-56 72-26 14 4-88 35-118 61z" fill="#f2c091"/>
+<path d="m463 393 120-58 77-30-11 10-62 28-129 67z" fill="#683d30"/>
+<path d="m453 421 128-66 16-5-13 16-114 64z" fill="#773e30"/>
+<path d="m490 350-5 47 71-37 18-45m-33 17 12-6" stroke="#713f30" stroke-width="2.5"/>
+<path d="m520 344 19-9-12 31-10 5 9-23-9 5zm19 14 6-7 5-2 1-4-6 3 2-6 5-3 1-4-8 4 2-6 15-7 2 3-4 11-5 5 3 1-4 11-16 8z" fill="#fcdfb4" stroke="#723f2f" stroke-width="1" paint-order="stroke"/>
+<!-- Near front wheel arch -->
+<path d="m421 425 14-25 17-13 18 2 10 14-1 27-13 12-34 18z" fill="#111914" stroke="#f1a771" stroke-width="4"/>
+<g transform="translate(451 431) rotate(19)"><use href="#wheel" transform="scale(.92 1.03)"/></g>
+<path d="m415 439 8-23q12-35 33-39 26-1 28 32l-8 10q0-30-17-31-17 0-31 33l-7 23z" fill="#d1744e" stroke="#283127" stroke-width="3.4"/>
+<!-- Front grille and four eyes -->
+<path d="m162 396 105 11 151-10 17-8-6 39-17 15-143 12-105-27z" fill="#1c241e" stroke="#e9c9a0" stroke-width="4"/>
+<path d="m233 414 36 4 81-5-3 19-77 7-38-7z" fill="#171e18" stroke="#9a9981" stroke-width="2.3"/>
+<path d="m238 419 32 4 72-6m-106 8 34 5 70-7" stroke="#858b74" stroke-width="2.4"/>
+<path d="m275 415-2 24 6-1 3-24z" fill="#cac4a6"/>
+<g transform="translate(180 411) rotate(-8) scale(.77 .78)"><use href="#lamp"/></g><g transform="translate(205 416) rotate(-8) scale(.76 .8)"><use href="#lamp"/></g>
+<g transform="translate(367 417) rotate(15) scale(.86 .9)"><use href="#lamp"/></g><g transform="translate(397 411) rotate(15) scale(.91 .94)"><use href="#lamp"/></g>
+<path d="m154 428 112 24 139-12 16-9-3 15-17 12-136 12-110-29z" fill="#b9b698" stroke="#18221a" stroke-width="3.6"/>
+<path d="m160 432 104 23 134-11-8 6-124 11-92-20z" fill="#e2d6b4"/>
+<path d="m186 448 72 19 73-3-15 8-53 4-75-18z" fill="#784432"/>
+<path d="m288 447 42-4-2 16-42 4z" fill="#ece0bd" stroke="#1a251d" stroke-width="2"/><path d="m291 456 3-5 1 6m6-7-1 6m6-6 3-1-1 6-4 1m11-7 5-1-4 7" stroke="#34382b" stroke-width="1.8"/>
+<!-- Flying bolts, slivers and stars -->
+<g stroke="#aebca2" stroke-width="2.5"><path d="m166 309 10-7 2 4-9 7zm506-195 9-5 4 3-10 7zm-523 382 6-4 2 3-8 5z"/></g>
+<use href="#star" transform="translate(375 107) scale(.8)"/><use href="#star" transform="translate(666 117) scale(.69)"/><use href="#star" transform="translate(731 313) scale(.5)"/><use href="#star" transform="translate(225 303) scale(.53)"/>
+</svg>
