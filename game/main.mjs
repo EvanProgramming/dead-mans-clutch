@@ -1,3 +1,4 @@
+import { ABILITIES, startDraftJump, useAbility } from './moves.mjs';
 import { makeRace, step, chooseTarget, possess, decline, trackPoint, TRACK_LENGTH } from './sim.mjs';
 import { createRenderer } from './render.mjs';
 import { createAudio } from './audio.mjs';
@@ -11,9 +12,15 @@ const names = {
   wagon: 'County Wagon',
   tow: 'Hook & Chain',
   hearse: 'The Hearse',
+  ambulance: 'Last Responder',
 };
+const actionNames = { coupe: 'DASH', wagon: 'GUARD', tow: 'HOOK', ambulance: 'MEND' };
+const touchMode = window.matchMedia('(pointer: coarse)');
 const storageKey = 'dead-mans-clutch.v1.';
-const bestKey = 'best.long-oval';
+const bestKey = 'pursuit.distance';
+const chainKey = 'pursuit.relay';
+// The speedometer uses 1.37 MPH per track unit per second.
+const distanceText = (v) => (v * 0.0006125).toFixed(2) + ' km';
 function read(key) {
   try {
     return localStorage.getItem(storageKey + key);
@@ -49,11 +56,29 @@ let race,
 let primaryAction,
   secondaryAction,
   muted = read('mute') === 'yes';
-function storedBest() {
-  const n = Number(read(bestKey));
+function storedBest(key = bestKey) {
+  const n = Number(read(key));
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
-let best = storedBest();
+let best = storedBest(), chainBest = storedBest(chainKey);
+let startingCar = read('pursuit.start');
+if (!Object.prototype.hasOwnProperty.call(ABILITIES, startingCar)) startingCar = 'wagon';
+let grid = 0, hasStarted = false, crossedBest = false;
+const garage = $('garage');
+for (const kind of ['wagon', 'coupe', 'tow', 'ambulance']) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.dataset.kind = kind;
+  button.innerHTML = '<svg viewBox="0 0 88 35" aria-hidden="true"><use href="#side-' + kind +
+    '"/></svg><span><strong>' + names[kind] + '</strong><small>' + ABILITIES[kind].name + '</small></span>';
+  button.title = ABILITIES[kind].description;
+  button.onclick = () => { startingCar = kind; write('pursuit.start', kind); showGarage(); };
+  garage.append(button);
+}
+function showGarage() {
+  for (const button of garage.children) button.setAttribute('aria-pressed', String(button.dataset.kind === startingCar));
+  $('garageChoice').textContent = ABILITIES[startingCar].description;
+}
 const icon = (name) => '<svg aria-hidden="true"><use href="#' + name + '"/></svg>';
 function setSound() {
   audio.setMuted(muted);
@@ -69,7 +94,16 @@ function toggleSound() {
   setSound();
 }
 function showBest() {
-  $('best').textContent = best ? time(best) : '— : — . —';
+  $('best').textContent = best ? distanceText(best) : '—';
+}
+function recordRun() {
+  if (!race) return;
+  const farthest = Math.max(best, storedBest(), race.furthest);
+  const chain = Math.max(chainBest, storedBest(chainKey), race.bestChain);
+  if (farthest > best) write(bestKey, String(farthest));
+  if (chain > chainBest) write(chainKey, String(chain));
+  best = farthest;
+  chainBest = chain;
 }
 function announce(text, seconds = 2) {
   $('banner').textContent = text;
@@ -108,9 +142,9 @@ function handbook() {
     'help',
     'DRIVER’S HANDBOOK',
     'How to play',
-    '<p>Your starter wagon is limping. Beat the hearse over three laps by stealing faster rides. Crash hard and time slows. Aim at a marked windshield and release to steal the car. Your old ride keeps rolling.</p><div class="controls"><div><span>Accelerate / brake</span><kbd>W / S · ↑ / ↓</kbd></div><div><span>Steer across the track</span><kbd>A / D · ← / →</kbd></div><div><span>Pick a windshield</span><kbd>AIM · ← / →</kbd></div><div><span>Jump / stay</span><kbd>CLICK OR SPACE / X</kbd></div><div><span>Pause / restart / mute</span><kbd>ESC / R / M</kbd></div></div>',
+    '<p>The lead hearse drains your soul when it pulls away. Get ahead to recover. Its bell marks a strip of road. The Hound lines up a ram. Steer out of the marked lane before it hits.</p><div class="controls"><div><span>Gas / brake · steer</span><kbd>W S · A D / ARROWS</kbd></div><div><span>Use this car’s ability</span><kbd>E</kbd></div><div><span>Fill a jump in another car’s wake</span><kbd>HOLD GAS BEHIND IT</kbd></div><div><span>Choose a ride · steal it</span><kbd>HOLD SPACE · RELEASE</kbd></div><div><span>Aim during any jump window</span><kbd>MOUSE OR ← →</kbd></div><div><span>Stay / pause / restart / mute</span><kbd>X / ESC / R / M</kbd></div></div><p>Hard crashes give you an escape jump, too. Chain clean draft jumps for a longer speed burst.</p>',
     'START ENGINE',
-    start,
+    enterGrid,
     'BACK',
     closeDialog,
   );
@@ -120,6 +154,7 @@ function menu() {
   view = 'menu';
   cancelAnimationFrame(frame);
   audio.suspend();
+  recordRun();
   race = null;
   $('menu').hidden = false;
   $('race').hidden = true;
@@ -128,11 +163,19 @@ function menu() {
   showBest();
   $('start').focus({ preventScroll: true });
 }
+function enterGrid() {
+  if (hasStarted) grid++;
+  start();
+}
 function start() {
   closeDialog();
   view = 'race';
   keys.clear();
-  race = makeRace();
+  recordRun();
+  race = makeRace(startingCar, grid);
+  race.recordLine = best;
+  hasStarted = true;
+  crossedBest = false;
   noticeLeft = helpLeft = coachUntil = 0;
   $('banner').hidden = $('clutch').hidden = true;
   $('menu').hidden = true;
@@ -143,7 +186,7 @@ function start() {
   audio.unlock();
   audio.event('restart');
   audio.setMuted(muted);
-  teach('Hold ↑ or W for gas. Steer with ← → or A D.', 4);
+  teach(touchMode.matches ? 'Hold GAS and follow the wake behind a car to earn a jump.' : 'Hold W or ↑ for gas. Follow a car’s wake to earn a jump.', 4.8);
   last = performance.now();
   cancelAnimationFrame(frame);
   paint(0);
@@ -158,7 +201,7 @@ function pause() {
     'Race paused',
     '<p>Lap ' +
       race.lap +
-      ' of 3 &nbsp;·&nbsp; ' +
+      ' &nbsp;·&nbsp; ' +
       names[race.player.kind] +
       ' &nbsp;·&nbsp; ' +
       time(race.time) +
@@ -174,67 +217,90 @@ function resume() {
   audio.unlock();
   last = performance.now();
 }
-function result(win) {
-  best = storedBest() || best;
-  const oldBest = best;
-  if (win && (!best || race.time < best)) {
-    best = race.time;
-    write(bestKey, String(best));
-  }
-  const count = race.possessionCount;
-  openDialog(
-    'result',
-    win ? 'CHECKERED FLAG' : 'THE CEMETERY GATES',
-    win ? 'Back in the flesh.' : 'The hearse got there first.',
-    '<p>' +
-      (win
-        ? 'The coroner wants his paperwork back.'
-        : 'The pit crew can squeeze you in for another funeral.') +
-      '</p><div class="statrow">Finish time<b>' +
-      time(race.time) +
-      '</b></div><div class="statrow">Windshields stolen<b>' +
-      count +
-      '</b></div><div class="statrow">Personal best<b>' +
-      (best ? time(best) : '—') +
-      (win && best !== oldBest ? ' · NEW' : '') +
-      '</b></div>',
-    'RACE AGAIN',
-    start,
-    'STARTING GRID',
-    menu,
-  );
+function result() {
+  recordRun();
+  const bestLine = race.recordLine > 0 && race.furthest > race.recordLine ? ' · NEW RECORD' : '';
+  const tip = !race.draftJumps ? 'Follow a bumper until the jump charges. You can steal a ride before your first crash.'
+    : race.bestChain < 2 ? 'Land a second draft jump within nine seconds to extend your overdrive.'
+    : 'The farthest windshield can buy more road than the fastest car.';
+  const delta = race.furthest - race.recordLine;
+  const comparison = race.recordLine > 100 && Math.abs(delta) > 16
+    ? ' · ' + distanceText(Math.abs(delta)) + (delta > 0 ? ' farther' : ' short of best') : '';
+  openDialog('result', 'SHADE COUNTY DEATH CERTIFICATE', 'End of the road.',
+    '<p>' + race.lossReason + ' ' + tip + '</p><div class="result-mile"><small>DISTANCE SURVIVED' + bestLine +
+    '</small><strong>' + distanceText(race.furthest) + '</strong></div><div class="statrow">Farthest run<b>' +
+    distanceText(best) + comparison + '</b></div><div class="statrow">Clean jump chain<b>' +
+    race.bestChain + ' &nbsp;·&nbsp; Best ' + chainBest + '</b></div><div class="statrow">Time at the wheel<b>' +
+    time(race.time) + ' &nbsp;·&nbsp; Lap ' + race.lap + '</b></div>',
+    'RETRY THIS PACK', start, 'CHANGE CAR & PACK', menu);
 }
 function events() {
   for (const e of race.events.splice(0)) {
-    audio.event(e.type);
+    audio.event(e.type, e);
     if (e.type === 'clutch') {
-      helpLeft = 0;
       coachUntil = 0;
       $('banner').hidden = true;
       noticeLeft = 0;
     }
-    if (e.type === 'shortcut') announce('Turn two · shortcut open', 3);
-    if (e.type === 'hearseHit') announce('The hearse hit a wreck', 2.2);
-    if (e.type === 'possess') {
-      announce(names[e.car.kind] + ' stolen', 1.5);
-      if (race.possessionCount === 1)
-        teach('Watch your old car. It can still clear the inside line.', 2.8);
+    if (e.type === 'shortcut') announce('Turn two · shortcut open', 2);
+    if (e.type === 'hearseHit') announce('Hearse stalled on a wreck', 2);
+    if (e.type === 'draftReady' && !helpLeft) {
+      teach(touchMode.matches ? 'Jump charged. Tap Steal a ride, then tap a marked windshield.' : 'Jump charged. Hold Space to aim, then release.', 4);
+      helpLeft = 1;
     }
-    if (e.type === 'stay') announce('Still running · hold gas', 1.5);
+    if (e.type === 'relay') announce(e.chain > 1 ? e.chain + ' rides linked · overdrive' : 'Clean jump · overdrive', 1.5);
+    if (e.type === 'possess' && race.jumpMode !== 'draft' && !race.boost)
+      announce(names[e.car.kind] + ' stolen', 1.4);
+    if (e.type === 'stay') announce('Still running', 1);
     if (e.type === 'tow') announce('Totaled · tow inbound', 1.4);
-    if (e.type === 'recover') announce('Back on track', 1.7);
-    if (e.type === 'lap') announce(e.lap === 3 ? 'Final lap' : 'Lap two', 2);
-    if (e.type === 'won' || e.type === 'lost') result(e.type === 'won');
+    if (e.type === 'recover') announce('Relief truck · back on track', 1.6);
+    if (e.type === 'lap') {
+      recordRun();
+      announce('Lap ' + e.lap + ' · pursuit intensifies', 1.7);
+    }
+    if (e.type === 'ability') announce(ABILITIES[e.kind]?.name || e.name, 1.3);
+    if (e.type === 'abilityMiss') teach(e.message, 2.2);
+    if (e.type === 'strike') announce(e.kind === 'bell' ? 'Toll bell hit your car' : 'Hound hit your car', 1.6);
+    if (e.type === 'evade') announce('Attack survived', 1.1);
+    if (e.type === 'lost') result();
+  }
+  if (race.phase === 'drive' && !crossedBest && race.recordLine > 100 && race.furthest > race.recordLine) {
+    crossedBest = true;
+    announce('New distance record', 2);
   }
 }
 function paint(dt) {
   renderer.draw(race, dt);
-  $('lap').textContent = race.lap + ' / 3';
+  $('lap').textContent = race.lap;
+  $('distance').textContent = distanceText(race.furthest);
+  const soul = Math.ceil(race.soul);
+  $('soul').textContent = soul + '%';
+  $('soulTrend').textContent = race.drain > 0 ? 'SOUL ↓ DRAIN' : race.soul < 100 && race.progress > race.hearse.s ? 'SOUL ↑ HEAL' : 'SOUL';
+  $('soulMeter').setAttribute('aria-valuenow', soul);
+  $('soulMeter').firstElementChild.style.transform = 'scaleX(' + race.soul / 100 + ')';
+  $('race').classList.toggle('draining', race.drain > 0);
+  $('race').classList.toggle('critical', soul <= 25);
+  const threat = race.threats[0];
+  $('warning').hidden = !threat;
+  if (threat) $('warning').textContent = (threat.kind === 'bell' ? 'TOLL BELL' : 'HOUND RAM') + ' · LEAVE THE STRIPES';
+  const ability = ABILITIES[race.player.kind];
+  $('driveTools').hidden = race.phase !== 'drive';
+  $('powerName').textContent = ability.name;
+  $('powerState').textContent = race.guard > 0 ? 'GUARD ACTIVE' : race.cooldown > 0 ? Math.ceil(race.cooldown) + 's TO READY' : actionNames[race.player.kind] + ' · READY';
+  $('powerBar').style.transform = 'scaleX(' + Math.max(0, 1 - race.cooldown / ability.cooldown) + ')';
+  $('power').disabled = race.cooldown > 0;
+  const ready = race.charge >= 1;
+  $('draft').disabled = !ready || !race.hasTarget;
+  $('draftTitle').textContent = ready ? 'Steal a ride' : 'Slipstream';
+  $('draftState').textContent = ready ? race.hasTarget ? (touchMode.matches ? 'TAP TO AIM' : 'HOLD TO AIM') : 'FIND A WINDSHIELD' : race.draftCar ? 'CHARGING' : 'FOLLOW A CAR';
+  $('draftBar').style.transform = 'scaleX(' + race.charge + ')';
+  $('relay').hidden = !(race.chainLeft > 0);
+  $('relay').textContent = 'CHAIN ×' + race.chain + ' · ' + Math.ceil(race.chainLeft) + 's';
   $('timer').textContent = time(race.time);
   const gap = (race.progress - race.hearse.s) / race.hearse.cruise;
-  $('gapLabel').textContent =
-    Math.abs(gap) < 0.12 ? 'WHEEL TO WHEEL' : gap > 0 ? 'YOU LEAD' : 'HEARSE LEADS';
-  $('gap').textContent = Math.abs(gap).toFixed(1) + 's';
+  $('gapLabel').textContent = Math.abs(gap) < 0.12 ? 'WHEEL TO WHEEL'
+    : gap < 0 ? 'HEARSE LEADS' : race.hearse.surge > 1 ? 'HEARSE PURSUING' : 'YOU LEAD';
+  $('gap').textContent = (gap > 0 && race.hearse.surge > 1 ? '+' : '') + Math.abs(gap).toFixed(1) + 's';
   const driver = trackPoint(race.player.s, race.player.lane),
     rival = trackPoint(race.hearse.s, race.hearse.lane);
   $('mapPlayer').setAttribute('cx', driver.x.toFixed(1));
@@ -245,7 +311,7 @@ function paint(dt) {
   );
   $('damage').hidden = !race.player.damage;
   $('damage').textContent = 'DAMAGE ' + race.player.damage + '%';
-  $('chassis').textContent = race.player.id === 'starter' ? 'LIMPING WAGON' : names[race.player.kind].toUpperCase();
+  $('chassis').textContent = names[race.player.kind].toUpperCase();
   $('speed').textContent = Math.round(race.player.speed * 1.37) + ' MPH';
   $('marker').style.left =
     Math.min(100, Math.max(0, ((race.progress % TRACK_LENGTH) / TRACK_LENGTH) * 100)) + '%';
@@ -254,7 +320,11 @@ function paint(dt) {
   if (picking) {
     const host = race.targets[race.selected];
     $('targetname').textContent = race.selected + 1 + ' / ' + names[host.kind];
-    $('targetPace').textContent = Math.round(host.topSpeed * 1.37) + ' MPH TOP SPEED';
+    $('jumpKind').textContent = race.jumpMode === 'draft' ? (touchMode.matches ? 'DRAFT JUMP · TAP A CAR' : 'DRAFT JUMP · RELEASE SPACE') : 'CRASH ESCAPE';
+    const advance = ((host.s - race.player.s + TRACK_LENGTH * 1.5) % TRACK_LENGTH + TRACK_LENGTH) % TRACK_LENGTH - TRACK_LENGTH / 2;
+    const lengths = Math.round(Math.abs(advance) / 24);
+    $('targetPace').textContent = actionNames[host.kind] + ' · ' + Math.round(host.topSpeed * 1.37) +
+      ' MPH · ' + (lengths ? lengths + (lengths === 1 ? ' length' : ' lengths') + (advance >= 0 ? ' up' : ' back') : 'alongside');
     $('stay').innerHTML = race.player.damage >= 100 ? 'Tow <kbd>X</kbd>' : 'Stay <kbd>X</kbd>';
     $('windowbar').style.transform = 'scaleX(' + Math.max(0, race.timer / race.clutchDuration) + ')';
   }
@@ -274,24 +344,47 @@ function tick(now) {
     coachUntil -= dt;
     noticeLeft -= dt;
     if (noticeLeft <= 0) $('banner').hidden = true;
-    if (race.phase === 'drive' && race.player.id === 'starter' && race.time > 3.8 && !helpLeft) {
-      teach('Your wagon is losing ground. A hard hit lets you steal a faster ride.', 5);
-      helpLeft = 1;
-    }
     events();
     paint(dt);
     audio.sync(race, !modal);
   }
   frame = requestAnimationFrame(tick);
 }
-$('start').onclick = start;
+$('start').onclick = enterGrid;
+// A second finger on an action button does not always generate a click while gas is held.
+function bindRaceAction(id, action) {
+  const button = $(id);
+  let secondaryId = null, lastTouch = -Infinity;
+  button.onpointerdown = e => {
+    lastTouch = -Infinity;
+    if (e.pointerType === 'touch' && !e.isPrimary) {
+      secondaryId = e.pointerId;
+      button.setPointerCapture(e.pointerId);
+    }
+  };
+  button.onpointerup = e => {
+    if (e.pointerId !== secondaryId) return;
+    secondaryId = null;
+    const hit = document.elementFromPoint(e.clientX, e.clientY);
+    if (!button.disabled && hit && button.contains(hit)) {
+      lastTouch = e.timeStamp;
+      action();
+    }
+  };
+  button.onlostpointercapture = button.onpointercancel = () => { secondaryId = null; };
+  button.onclick = e => {
+    if (!e.detail || e.timeStamp - lastTouch > 500) action();
+  };
+}
+bindRaceAction('power', () => useAbility(race));
+bindRaceAction('draft', () => startDraftJump(race));
 $('how').onclick = handbook;
 $('pause').onclick = pause;
 $('sound').onclick = toggleSound;
-$('prevTarget').onclick = () => chooseTarget(race, -1);
-$('nextTarget').onclick = () => chooseTarget(race, 1);
-$('take').onclick = () => possess(race);
-$('stay').onclick = () => decline(race);
+bindRaceAction('prevTarget', () => chooseTarget(race, -1));
+bindRaceAction('nextTarget', () => chooseTarget(race, 1));
+bindRaceAction('take', () => possess(race));
+bindRaceAction('stay', () => decline(race));
 $('dialogPrimary').onclick = () => primaryAction?.();
 $('dialogSecondary').onclick = () => secondaryAction?.();
 $('dismiss').onclick = () => (modal === 'pause' ? resume() : closeDialog());
@@ -317,6 +410,7 @@ document.addEventListener('fullscreenchange', () => {
     document.fullscreenElement ? 'Exit fullscreen' : 'Enter fullscreen',
   );
 });
+window.addEventListener('pagehide', recordRun);
 if (!document.fullscreenEnabled) $('fullscreen').hidden = true;
 const road = $('road');
 function point(e) {
@@ -337,7 +431,7 @@ for (const button of document.querySelectorAll('[data-bind]')) {
     keys.add(code);
     audio.unlock();
   };
-  button.onpointerup = button.onpointercancel = () => keys.delete(code);
+  button.onpointerup = button.onpointercancel = button.onlostpointercapture = () => keys.delete(code);
 }
 window.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.altKey || e.metaKey) return;
@@ -357,6 +451,14 @@ window.addEventListener('keydown', (e) => {
     e.preventDefault();
   if (e.code === 'Escape' && !e.repeat) {
     pause();
+    return;
+  }
+  if (race.phase === 'drive' && !e.repeat && e.code === 'KeyE') {
+    useAbility(race);
+    return;
+  }
+  if (race.phase === 'drive' && !e.repeat && e.code === 'Space') {
+    startDraftJump(race);
     return;
   }
   if (race.phase === 'clutch') {
@@ -385,5 +487,6 @@ window.addEventListener('storage', (e) => {
     showBest();
   }
 });
+showGarage();
 showBest();
 setSound();

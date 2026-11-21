@@ -17,7 +17,7 @@ test('a clean inside line in the starter cannot outrun the hearse',()=>{
   // Isolate the actual race pace from the cost of contact.
   race.cars=[race.player,race.hearse];
   race.shortcutOpen=race.barriers[0].broken=true;
-  for(let i=0;i<180*60 && !['won','lost'].includes(race.phase);i++){
+  for(let i=0;i<180*60 && race.phase !== 'lost';i++){
     step(race,{gas:true,steer:Math.max(-1,Math.min(1,(-58-race.player.lane)*.25))});
   }
   assert.equal(race.phase,'lost');
@@ -26,7 +26,7 @@ test('a clean inside line in the starter cannot outrun the hearse',()=>{
 
 test('holding gas and declining every windshield loses in live traffic',()=>{
   const race=makeRace();
-  for(let i=0;i<180*60 && !['won','lost'].includes(race.phase);i++){
+  for(let i=0;i<180*60 && race.phase !== 'lost';i++){
     if(race.phase==='clutch')decline(race);
     step(race,{gas:true});
   }

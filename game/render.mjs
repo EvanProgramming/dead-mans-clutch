@@ -1,4 +1,5 @@
-import { bodyYaw, trackPoint, TRACK_LENGTH } from './sim.mjs';
+import { bodyYaw, trackPoint, ROAD_HALF_WIDTH, TRACK_LENGTH } from './sim.mjs';
+import { DRAFT } from './moves.mjs';
 
 const ink = '#181b18',
   ivory = '#f3dfb1',
@@ -45,22 +46,24 @@ function rng() {
     return seed / 4294967296;
   };
 }
-function carSprite(kind, number) {
+function carSprite(kind, number, enemy) {
   const a = document.createElement('canvas');
   a.width = 200;
   a.height = 120;
   const c = a.getContext('2d');
   c.translate(100, 60);
   c.scale(2, 2);
-  const hearse = kind === 'hearse',
+  const hound = enemy === 'hound',
+    hearse = kind === 'hearse',
+    ambulance = kind === 'ambulance',
     tow = kind === 'tow',
     coupe = kind === 'coupe';
-  const front = coupe ? 35 : 39,
-    back = hearse ? -44 : -37,
-    side = coupe ? 14 : 16;
-  const coat = hearse ? '#333d37' : coupe ? '#9cad7a' : tow ? '#b87936' : '#b3482d';
-  const light = hearse ? '#9ea598' : coupe ? '#e4d6a2' : tow ? '#e3b96d' : '#e88d52';
-  const shade = hearse ? '#212722' : coupe ? '#5e7056' : tow ? '#70482b' : '#773325';
+  const front = hound ? 44 : coupe ? 35 : 39,
+    back = hearse || ambulance ? -44 : -37,
+    side = ambulance ? 18 : coupe ? 14 : 16;
+  const coat = hound ? '#262b29' : ambulance ? '#f3dfb1' : hearse ? '#333d37' : coupe ? '#9cad7a' : tow ? '#b87936' : '#b3482d';
+  const light = hound ? '#e5663f' : ambulance ? '#fff1c9' : hearse ? '#9ea598' : coupe ? '#e4d6a2' : tow ? '#e3b96d' : '#e88d52';
+  const shade = hound ? '#753325' : ambulance ? '#ae593b' : hearse ? '#212722' : coupe ? '#5e7056' : tow ? '#70482b' : '#773325';
   const body = [
     back,
     -side + 4,
@@ -98,7 +101,7 @@ function carSprite(kind, number) {
   }
   rect(c, front, -7, 1.7, 14, '#aaa58a');
   rect(c, back - 1, -6, 1.5, 12, '#9a9b83');
-  const windX = tow ? 17 : 10;
+  const windX = tow || ambulance ? 17 : 10;
   poly(
     c,
     [windX, -13, windX + 6, -11, windX + 8, 10, windX + 1, 13, windX - 2, 9, windX - 3, -9],
@@ -111,7 +114,38 @@ function carSprite(kind, number) {
     poly(c, [windX - 2, y * 11, windX - 4, y * 14, -17, y * 14, -13, y * 11], '#303734', ink, 0.7);
     rect(c, windX - 2, y * 15 - 1, 4, 2.6, shade);
   }
-  if (tow) {
+  if (hound) {
+    for (const sign of [-1, 1]) {
+      poly(c, [-34, sign * 7, -30, sign * 12, -14, sign * 10, -19, sign * 7,
+        -6, sign * 4, -14, sign * 2], '#c14c33');
+      poly(c, [-20, sign * 7, -6, sign * 8, 3, sign * 3, -9, sign * 5], ivory);
+      poly(c, [19, sign * 12, 25, sign * 8, 34, sign * 4, 40, sign * 4,
+        33, sign * 8, 22, sign * 13], '#e5c497', ink, 0.9);
+      for (let x = 22; x < 36; x += 5) {
+        const y = 10 - (x - 22) * 0.31;
+        poly(c, [x, sign * y, x + 4, sign * (y - 1), x + 4, sign * (y - 5)], ivory);
+      }
+      line(c, 20, sign * 5, 24, sign * 4, '#fa8a4e', 2.5);
+      poly(c, [5, sign * 12, -4, sign * 14, -1, sign * 7], shade, ink, 1);
+    }
+    poly(c, [34, -3, 42, -4, 44, 0, 42, 4, 34, 3, 37, 0], '#121815');
+  } else if (ambulance) {
+    rect(c, -40, -14, 48, 28, '#d1b888');
+    rect(c, -38, -12, 43, 24, '#f6e4b9');
+    for (const y of [-16, 13]) rect(c, -38, y, 69, 3, '#bd5237');
+    rect(c, 8, -14, 5, 28, ink);
+    rect(c, 9, -13, 3, 10, '#f4754a');
+    rect(c, 9, 3, 3, 10, '#79c9bf');
+    c.save();
+    c.translate(-16, 0);
+    for (let i = 0; i < 3; i++) {
+      rect(c, -3.4, -10.5, 6.8, 21, '#176966');
+      c.rotate(Math.PI / 3);
+    }
+    line(c, 0, -6.5, 0, 6.5, ivory, 1.5);
+    c.restore();
+    rect(c, 29, -12, 4, 24, '#cc5b3a');
+  } else if (tow) {
     rect(c, back + 4, -12, 37, 24, ink);
     rect(c, back + 6, -10, 32, 20, '#504b3e');
     for (let y = -8; y < 10; y += 4) line(c, back + 6, y, -3, y, '#82795d', 0.7);
@@ -126,6 +160,15 @@ function carSprite(kind, number) {
     poly(c, [-25, -4, -17, -7, -7, -5, 0, 0, -7, 5, -17, 7, -25, 4], '#252c27', '#b8b49b', 0.8);
     line(c, -19, 0, -9, 0, '#c6bea1', 1.2);
     line(c, -15, -3, -15, 3, '#c6bea1', 1.1);
+    if (enemy === 'hearse') {
+      poly(c, [-31, -5, -23, -9, -6, -6, 2, 0, -6, 6, -23, 9, -31, 5], '#cfb789', ink, 1.2);
+      line(c, -24, 0, -9, 0, ink, 2.1);
+      line(c, -19, -4.5, -19, 4.5, ink, 2);
+      for (const sign of [-1, 1]) {
+        poly(c, [20, 0, 19, sign * 11, 25, sign * 7, 35, sign * 10, 27, sign * 3], '#a44b37');
+        line(c, 30, sign * 12, 36, sign * 9, '#f4d69e', 2.2);
+      }
+    }
   } else {
     const tail = coupe ? -22 : -29;
     poly(
@@ -338,6 +381,131 @@ function ground() {
   return { a, x0, y0, w, h };
 }
 
+function trackGap(a, b) {
+  const delta = a.s - b.s;
+  return delta - Math.round(delta / TRACK_LENGTH) * TRACK_LENGTH;
+}
+
+function drawRecordLine(c, r, cameraAngle) {
+  const delta = r.recordLine - r.progress;
+  if (!Number.isFinite(delta) || r.recordLine <= 100 || Math.abs(delta) > 240 || r.furthest > r.recordLine + 160) return;
+  const s = r.player.s + delta;
+  const inner = trackPoint(s, -ROAD_HALF_WIDTH);
+  const outer = trackPoint(s, ROAD_HALF_WIDTH);
+  line(c, inner.x, inner.y, outer.x, outer.y, '#394131', 2);
+  c.save();
+  c.setLineDash([4, 2]);
+  line(c, inner.x, inner.y, outer.x, outer.y, '#e9e8b0', 1.25);
+  c.restore();
+  for (const foot of [inner, outer]) {
+    c.save();
+    c.translate(foot.x, foot.y);
+    c.rotate(-cameraAngle);
+    line(c, 0, 0, 0, -10, ink, 1.1);
+    poly(c, [-0.4, -12, 21, -12, 18.5, -8.7, 20.5, -6.5, -0.4, -6.5], lime, ink, 0.6);
+    label(c, 'YOUR BEST', 9, -8, 3.4, ink);
+    c.restore();
+  }
+}
+
+function drawWake(c, source, charge, active) {
+  const paint = active ? '#e7f39f' : 'rgba(243,223,177,.52)';
+  for (let i = 0; i < 6; i++) {
+    const d = DRAFT.minGap + i * (DRAFT.maxGap - DRAFT.minGap) / 5;
+    const p = trackPoint(source.s - d, source.lane);
+    const width = 9 + i * (DRAFT.halfWidth - 9) / 5;
+    c.save();
+    c.translate(p.x, p.y);
+    c.rotate(p.angle);
+    for (const y of [-1, 1]) {
+      poly(c, [-3.5, y * width, -0.5, y * width, 3.5, y * (width - 3.5),
+        0.5, y * (width - 3.5)], paint, active ? '#546344' : null, 0.46);
+    }
+    if (active && charge >= (i + 1) / 6) {
+      poly(c, [-3, -2.7, 2, 0, -3, 2.7, -1.6, 0], lime, ink, 0.4);
+    }
+    c.restore();
+  }
+}
+
+// The bell covers the hearse's wake. The ram's sightline previews its committed run.
+function drawThreat(c, threat, player, cameraAngle) {
+  const bell = threat.kind === 'bell';
+  const sourceS = player.s + trackGap(threat.source, player);
+  const start = bell ? sourceS - 245 : Math.min(sourceS, player.s - 18);
+  const end = bell ? sourceS : Math.max(sourceS + 40, player.s + 35);
+  const width = 14;
+  const edges = [Math.max(-ROAD_HALF_WIDTH, threat.lane - width),
+    Math.min(ROAD_HALF_WIDTH, threat.lane + width)];
+  const segments = Math.ceil((end - start) / 12);
+  const ribbon = [];
+  for (let side = 0; side <= 1; side++) {
+    for (let i = 0; i <= segments; i++) {
+      const u = side ? 1 - i / segments : i / segments;
+      const p = trackPoint(start + (end - start) * u, edges[side]);
+      ribbon.push(p.x, p.y);
+    }
+  }
+  poly(c, ribbon, 'rgba(104,24,23,.42)', '#3f3025', 1.45);
+  for (let s = start + 2; s < end - 3; s += 12) {
+    for (const edge of edges) {
+      const a = trackPoint(s, edge), b = trackPoint(Math.min(end, s + 5.5), edge);
+      line(c, a.x, a.y, b.x, b.y, '#f7ce95', 1.4);
+    }
+    const a = trackPoint(s, edges[0] + 1), b = trackPoint(Math.min(end, s + 11), edges[1] - 1);
+    line(c, a.x, a.y, b.x, b.y, 'rgba(249,173,110,.46)', 0.8);
+  }
+  const marker = trackPoint(Math.max(start + 7, Math.min(end - 7, player.s + 32)), threat.lane);
+  c.save();
+  c.translate(marker.x, marker.y);
+  c.rotate(-cameraAngle);
+  poly(c, [-7, -5, -4, -8, 4, -8, 7, -5, 7, 4, 0, 9, -7, 4], ink, ivory, 0.9);
+  if (bell) {
+    c.beginPath();
+    c.moveTo(-4.8, 2.2);
+    c.quadraticCurveTo(-3, 0, -3.1, -1.5);
+    c.quadraticCurveTo(-3, -6.4, 0, -6.2);
+    c.quadraticCurveTo(3, -6.4, 3.1, -1.5);
+    c.quadraticCurveTo(3, 0, 4.8, 2.2);
+    c.fillStyle = ivory;
+    c.fill();
+    rect(c, -1.4, 3.1, 2.8, 1.3, ivory);
+  } else {
+    for (const y of [-3, 2]) poly(c, [-4.5, y, 0, y - 3, 4.5, y, 4.5, y + 2.5, 0, y - 0.5, -4.5, y + 2.5], ivory);
+  }
+  const fraction = Math.max(0, Math.min(1, threat.time / threat.duration));
+  rect(c, -5.5, 9.5, 11, 2.4, ink);
+  rect(c, -5, 10, 10 * fraction, 1.4, '#f6bd78');
+  c.restore();
+}
+
+function drawPlayerEffect(c, r, tick, reduce) {
+  if (r.boost > 0) {
+    for (const side of [-1, 1]) {
+      const flicker = reduce ? 0 : 2.2 * Math.sin(tick * 21 + side);
+      const tail = -22 - 5 * Math.min(1, r.boost) + flicker;
+      const y = side * 2.8;
+      poly(c, [-8, y - 1.5, -15, y - 2.1, tail + 2, y - 1.2, tail, y,
+        -17, y + 1.5, -8, y + 1.35], '#f88743', '#754332', 0.65);
+      poly(c, [-8, y - 1.1, -15, y - 1, tail + 4, y, -12, y + 0.7, -8, y + 0.7], '#fff4af');
+    }
+  }
+  if (r.guard > 0) {
+    const shell = [-14, -4, -10, -8, 7, -8, 15, -4, 17, 0, 15, 4, 7, 8, -10, 8, -14, 4];
+    poly(c, shell, 'rgba(216,237,121,.18)', ink, 2.2);
+    poly(c, shell, null, lime, 1.25);
+    for (const side of [-1, 1]) line(c, 9, side * 8.7, 15, side * 5.7, ivory, 1.1);
+  }
+  if (r.abilityFx?.kind === 'ambulance') {
+    for (const side of [-1, 1]) {
+      const spread = reduce ? 0 : 1.5 * Math.sin(tick * 7 + side);
+      poly(c, [3, side * 4, -2 + spread, side * 15, 8 + spread, side * 14.5, 4, side * 4],
+        side > 0 ? 'rgba(135,236,214,.66)' : 'rgba(255,160,102,.71)');
+      line(c, 3, side * 5, 3 + spread, side * 12, ivory, 1);
+    }
+  }
+}
+
 export function createRenderer(canvas) {
   const c = canvas.getContext('2d', { alpha: false }),
     terrain = ground(),
@@ -439,6 +607,7 @@ export function createRenderer(canvas) {
     c.scale(cam.z, cam.z);
     c.translate(-cam.x, -cam.y);
     c.drawImage(terrain.a, terrain.x0, terrain.y0, terrain.w, terrain.h);
+    drawRecordLine(c, r, cam.angle);
     for (const b of r.barriers) {
       if (b.broken) {
         for (const offset of [-3, 3]) {
@@ -489,6 +658,33 @@ export function createRenderer(canvas) {
     }
     hits.length = 0;
     const playerPoint = trackPoint(r.player.s, r.player.lane);
+    if (r.phase === 'drive') {
+      let donor = r.draftCar;
+      if (!donor) {
+        let best = Infinity;
+        for (const car of r.cars) {
+          if (car === r.player || car.wreck || car.speed < DRAFT.minDonorSpeed) continue;
+          const gap = trackGap(car, r.player);
+          const cost = gap + 1.4 * Math.abs(car.lane - r.player.lane);
+          if (gap >= DRAFT.minGap && gap <= DRAFT.maxGap && cost < best) {
+            donor = car;
+            best = cost;
+          }
+        }
+      }
+      if (donor) drawWake(c, donor, r.charge, !!r.draftCar);
+      if (r.abilityFx?.kind === 'tow') {
+        const hook = r.abilityFx.target;
+        const to = trackPoint(hook.s - 9, hook.lane);
+        line(c, playerPoint.x, playerPoint.y, to.x, to.y, ink, 1.8);
+        c.save();
+        c.setLineDash([2.2, 1.8]);
+        line(c, playerPoint.x, playerPoint.y, to.x, to.y, '#f0c58a', 1.1);
+        c.restore();
+        poly(c, [to.x - 2, to.y, to.x, to.y - 2, to.x + 2, to.y, to.x, to.y + 2], ivory, ink, 0.65);
+      }
+    }
+    for (const threat of r.threats) drawThreat(c, threat, r.player, cam.angle);
     for (const [idx, v] of r.cars.entries()) {
       const p = trackPoint(v.s, v.lane),
         pos = screen(p);
@@ -513,10 +709,11 @@ export function createRenderer(canvas) {
         }
         c.globalAlpha = 1;
       }
-      let sprite = sprites.get(v.kind + (idx % 9));
+      const skin = (v.enemy || v.kind) + '-' + (idx % 9);
+      let sprite = sprites.get(skin);
       if (!sprite) {
-        sprite = carSprite(v.kind, String([13, 8, 72, 44, 29, 67, 14, 88, 36][idx % 9]));
-        sprites.set(v.kind + (idx % 9), sprite);
+        sprite = carSprite(v.kind, String([13, 8, 72, 44, 29, 67, 14, 88, 36][idx % 9]), v.enemy);
+        sprites.set(skin, sprite);
       }
       if (v.wreck) {
         c.fillStyle = 'rgba(59,40,26,.31)';
@@ -527,6 +724,7 @@ export function createRenderer(canvas) {
       }
       if (crash?.car === v && shock > 0) c.scale(1 - 0.18 * shock, 1 + 0.15 * shock);
       poly(c, [-10, 2, -7, -3, 10, -3, 15, 1, 14, 7, -5, 7], 'rgba(31,25,21,.45)');
+      if (v === r.player && r.phase === 'drive') drawPlayerEffect(c, r, tick, reduce.matches);
       c.drawImage(sprite, -13.5, -8.1, 27, 16.2);
       if (v.wreck) {
         poly(c, [2, -4, 7, -3, 4, -1, 10, 2, 3, 2, 5, 4, 0, 1], '#2e2b22');
@@ -622,10 +820,10 @@ export function createRenderer(canvas) {
     if (picking) {
       rect(c, 0, 0, w, h, 'rgba(19,24,18,.22)');
       const start = screen(playerPoint);
+      const rad = Math.max(16, Math.min(36, 12 * cam.z));
       for (const [index, v] of r.targets.entries()) {
         const q = screen(trackPoint(v.s, v.lane)),
           active = index === r.selected;
-        const rad = Math.max(16, Math.min(36, 12 * cam.z));
         hits.push({ x: q.x, y: q.y, r: rad + 12, index });
         c.save();
         c.strokeStyle = active ? lime : '#efe4c3';
@@ -688,13 +886,55 @@ export function createRenderer(canvas) {
             c.restore();
           }
         }
-        rect(c, q.x - 8, q.y - rad - 15, 16, 13, active ? lime : ivory);
-        label(c, String(index + 1), q.x, q.y - rad - 5, 10, ink);
+      }
+      const action = { coupe: 'DASH', wagon: 'GUARD', tow: 'HOOK', ambulance: 'MEND' };
+      for (const hit of hits) {
+        const word = action[r.targets[hit.index].kind];
+        const badgeW = word === 'GUARD' ? 59 : 54, badgeH = 18;
+        let best = Infinity;
+        // Try all four edges of the target ring. Earlier flags and cars get first claim.
+        for (const [dx, dy] of [[0, -rad - 11], [0, rad + 11],
+          [rad + badgeW / 2 + 2, 0], [-rad - badgeW / 2 - 2, 0]]) {
+          const x = Math.max(2, Math.min(w - badgeW - 2, hit.x + dx - badgeW / 2));
+          const y = Math.max(2, Math.min(h - badgeH - 2, hit.y + dy - badgeH / 2));
+          let overlap = 0;
+          for (const other of hits) {
+            const dx = Math.max(x - other.x, other.x - x - badgeW, 0);
+            const dy = Math.max(y - other.y, other.y - y - badgeH, 0);
+            overlap += Math.max(0, rad * 0.86 - Math.hypot(dx, dy));
+            const b = other.badge;
+            if (other !== hit && b && x < b.x + b.w + 2 && x + badgeW + 2 > b.x &&
+                y < b.y + badgeH + 2 && y + badgeH + 2 > b.y) overlap += 100;
+          }
+          if (overlap < best) {
+            best = overlap;
+            hit.badge = { x, y, w: badgeW, h: badgeH };
+          }
+          if (!overlap) break;
+        }
+        const {x, y} = hit.badge;
+        const accent = hit.index === r.selected ? lime : ivory;
+        const nx = Math.max(x, Math.min(x + badgeW, hit.x));
+        const ny = Math.max(y, Math.min(y + badgeH, hit.y));
+        const heading = Math.atan2(ny - hit.y, nx - hit.x);
+        line(c, hit.x + Math.cos(heading) * rad, hit.y + Math.sin(heading) * rad, nx, ny, accent, 1);
+        poly(c, [x, y, x + badgeW, y, x + badgeW - 3, y + badgeH, x, y + badgeH], ink, accent, 1.2);
+        poly(c, [x, y, x + 16, y, x + 13, y + badgeH, x, y + badgeH], accent);
+        label(c, hit.index + 1, x + 7, y + 13, 11, ink);
+        c.font = '600 12px Barlow, "Arial Narrow", sans-serif';
+        c.textAlign = 'center';
+        c.fillStyle = accent;
+        c.fillText(word, x + (badgeW + 13) / 2, y + 13);
       }
     } else if (r.phase === 'drive') {
       const q = screen(playerPoint),
-        top = q.y - 7 * cam.z - 7;
+        heading = playerPoint.angle + bodyYaw(r.player) + cam.angle,
+        top = q.y - (11 * Math.abs(Math.sin(heading)) + 5 * Math.abs(Math.cos(heading))) * cam.z - 7;
       poly(c, [q.x - 4.5, top - 4, q.x + 4.5, top - 4, q.x, top + 1], lime, ink, 0.8);
+      if (r.charge > 0) {
+        rect(c, q.x - 9, top - 9, 18, 4, ink);
+        rect(c, q.x - 8, top - 8, 16 * r.charge, 2, r.charge === 1 ? ivory : lime);
+      }
     }
   }
   function hitTarget(state, clientX, clientY) {
@@ -704,6 +944,10 @@ export function createRenderer(canvas) {
       y = ((clientY - box.top) * height) / box.height;
     let best = -1,
       distance = Infinity;
+    for (const hit of hits) {
+      const b = hit.badge;
+      if (b && x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return hit.index;
+    }
     for (const hit of hits) {
       const d = Math.hypot(x - hit.x, y - hit.y);
       if (d <= hit.r && d < distance) {

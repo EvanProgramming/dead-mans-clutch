@@ -271,50 +271,11 @@ main {
     transparent 10px 25px
   );
 }
-.program {
-  display: grid;
-  grid-template-columns: 1.55fr 0.8fr 1fr 0.95fr;
-  align-items: center;
-  border-top: 1px solid #777a64;
-  border-bottom: 1px solid #515a49;
-  background: #bec4a407;
-  padding: 18px 1.5%;
-  min-height: 85px;
-}
-.program > div {
-  min-height: 39px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 5px;
-  padding-left: 18%;
-  border-left: 1px solid #545c4c;
-}
-.program .track {
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: center;
-  border: 0;
-  gap: 13px;
-  padding-left: 0;
-}
-.track svg {
-  width: 64px;
-  color: #babda3;
-}
-.track span {
-  display: grid;
-  gap: 5px;
-}
 small,
 .tag {
   font: 700 10px/1.1 var(--mono);
   letter-spacing: 0.14em;
   color: #a7af98;
-}
-.program strong {
-  font: 600 23px/1.1 var(--bar);
-  letter-spacing: 0.015em;
 }
 #best {
   font: 600 20px var(--bar);
@@ -687,19 +648,6 @@ button kbd {
   .menu-actions {
     gap: 7px;
   }
-  .program {
-    min-height: 68px;
-    padding: 12px 1%;
-  }
-  .program strong {
-    font-size: 19px;
-  }
-  .program small {
-    font-size: 8px;
-  }
-  .track svg {
-    width: 47px;
-  }
   footer {
     min-height: 38px;
   }
@@ -765,24 +713,6 @@ button kbd {
   .wide {
     display: none;
   }
-  .program {
-    grid-template-columns: 1.3fr 1fr;
-    gap: 10px 0;
-    padding: 12px 4px;
-  }
-  .program > div {
-    padding-left: 13px;
-  }
-  .program > div:nth-child(3) {
-    border-left: 0;
-    padding-left: 0;
-  }
-  .program .track svg {
-    width: 36px;
-  }
-  .program strong {
-    font-size: 17px;
-  }
   footer {
     min-height: 30px;
   }
@@ -842,20 +772,6 @@ button kbd {
   }
   .wide {
     display: none;
-  }
-  .program {
-    min-height: 49px;
-    padding: 5px 0;
-  }
-  .program > div {
-    min-height: 27px;
-    gap: 2px;
-  }
-  .program strong {
-    font-size: 15px;
-  }
-  .track svg {
-    height: 25px;
   }
   footer {
     min-height: 17px;
@@ -997,12 +913,103 @@ button kbd {
   .intro p {
     margin-bottom: 15px;
   }
-  .program {
-    min-height: 65px;
-    padding-top: 10px;
-    padding-bottom: 10px;
-  }
   footer {
     min-height: 35px;
   }
+}
+
+/* The garage is printed like a club entry card, with the selected chassis punched in. */
+.garage-head {
+  display: flex;
+  align-items: baseline;
+  gap: 17px;
+  border-top: 1px solid #858975;
+  padding: 10px 0 8px;
+}
+.garage-head h2 { margin: 0; text-transform: uppercase; font: 600 21px/1 var(--bar); }
+#garageChoice { color: #c2c7ae; font: italic 14px/1.18 Georgia, serif; }
+.best-run { margin-left: auto; white-space: nowrap; color: var(--dim); font: 700 9px var(--mono); letter-spacing: .09em; }
+.best-run #best { margin-left: 5px; color: var(--cream); font: 600 16px var(--bar); }
+.garage { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
+.garage button {
+  display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 60px;
+  border: 1px solid #535e4e; border-bottom: 3px solid #535e4e; background: #222a22;
+  color: var(--cream); padding: 4px 6px; text-align: left;
+}
+.garage button:hover { background: #30392c; }
+.garage button[aria-pressed=true] { color: #f5e8c4; background: #354031; border-color: #acba93; border-bottom-color: #dc8b60; }
+.garage button svg { width: clamp(40px, 6.6vw, 92px); }
+.garage button span, .drive-tool span { display: grid; gap: 3px; }
+.garage strong { font: 600 clamp(16px,1.5vw,24px)/1 var(--bar); }
+.garage small { font-size: clamp(8px,.68vw,11px); text-transform: uppercase; letter-spacing: .045em; color: #c1c6ac; }
+.vital,.lead { display:flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.hud-right { min-width: 130px; }
+.hud .vital b { font: 600 22px/1 var(--bar); }
+.hud .lead b { font: 700 11px var(--mono); }
+.soul-track { height: 5px; background: #404c3e; margin: 0 0 3px; }
+.soul-track i,.drive-tool > i { display:block; background: #c4dfa3; height: 100%; transform-origin: left; }
+.draining .soul-track i,.draining .hud-right { border-color: #e99c69; }
+.draining .soul-track i { background: #e99c69; }
+.critical .vital { color: #ffc097; }
+.drive-tools { position:absolute; z-index:2; left:12px; bottom:44px; display:flex; align-items:center; gap:6px; }
+.drive-tool {
+  display:flex; position:relative; gap:8px; align-items:center; padding:7px 10px 8px;
+  border:1px solid #a3ae8b; background:#19251cfa; color:var(--cream); min-height:43px; text-align:left;
+}
+.drive-tool:disabled { opacity:1; border-color:#777e69; color:#c2c4ae; background:#1c251deb; }
+.drive-tool:not(:disabled):hover { background:#354433; }
+.drive-tool kbd { padding:3px; border:1px solid #76836c; border-radius:2px; font:700 10px var(--mono); }
+.drive-tool strong { font:600 17px/1 var(--bar); }
+.drive-tool small { font:700 8px/1 var(--mono); letter-spacing:.045em; }
+.drive-tool > i { position:absolute; left:0; bottom:0; width:100%; height:3px; }
+#powerBar { background:#dfa579; }
+#relay { padding:5px 7px; color:#d8edaf; background:#19231af5; font:700 11px var(--mono); }
+.tach-time { font-variant-numeric:tabular-nums; color:var(--dim); }
+.warning {
+  position:absolute; left:50%; top:15%; transform:translateX(-50%); z-index:3;
+  background:#34251e; color:#ffe1ae; border:1px solid #ebaf71; border-left:6px solid #ebaf71;
+  padding:5px 10px; white-space:nowrap; font:600 clamp(13px,1.55vw,19px)/1.2 var(--bar); letter-spacing:.07em;
+}
+.result-mile { background:#1b251d; padding:11px 14px; border-left:3px solid #c4d99e; display:grid; gap:2px; }
+.result-mile strong { font:600 34px/1 var(--bar); }
+.coach { bottom:100px; }
+@media (min-width:651px) {
+  .poster { min-height:290px; height:clamp(295px,calc(100svh - 228px),700px); }
+}
+@media (min-width:651px) and (max-height:600px) {
+  .mast { min-height:43px; }
+  .poster { min-height:220px; height:calc(100svh - 154px); }
+  .garage-head { padding:5px 0; }
+  .garage-head h2 { font-size:17px; }
+  .garage button { min-height:44px; }
+  footer { min-height:25px; }
+  .intro h1 { max-width:min(80%,380px); margin:7px 0; }
+  .intro p { margin:5px 0 10px; font-size:16px; }
+  .hud-left strong,.hud-left b { font-size:21px; }
+}
+@media (max-width:650px) {
+  .garage-head { flex-wrap:wrap; align-items:center; gap:4px 9px; padding:9px 0; }
+  #garageChoice { order:3; width:100%; font-size:13px; }
+  .garage { grid-template-columns:1fr 1fr; }
+  .garage button { justify-content:flex-start; gap:8px; min-height:44px; }
+  .garage button svg { width:47px; }
+  .hud-right { min-width:108px; }
+  .drive-tools { left:6px; bottom:38px; gap:4px; }
+  .drive-tool { min-height:38px; padding:5px 7px 7px; gap:5px; }
+  .drive-tool strong { font-size:14px; }
+  .drive-tool kbd { font-size:8px; }
+  #relay { font-size:8px; padding:3px; }
+  .minimap { bottom:86px; }
+  .coach { bottom:136px; font-size:14px; }
+  .tach-time { display:none; }
+  .clutch .aimhint { display:block; font-size:10px; }
+  .banner { top:80px; white-space:nowrap; font-size:14px; }
+  .warning { top:116px; }
+}
+@media (pointer:coarse) {
+  .drive-tools { bottom:85px; }
+  .drive-tool kbd { display:none; }
+  .drive-tool { min-height:41px; }
+  .coach { bottom:142px; }
+  .minimap { bottom:142px; }
 }

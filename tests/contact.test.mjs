@@ -4,7 +4,7 @@ import { makeRace, step, trackPoint, TRACK_LENGTH, decline, possess, bodyYaw } f
 
 function setup() {
   const r = makeRace();
-  const host = r.cars.find(c => !c.wreck && c !== r.player && c !== r.hearse);
+  const host = r.cars.find(c => !c.wreck && !c.enemy && c !== r.player);
   r.cars = [r.player, host, r.hearse];
   r.hearse.s = 400;
   return { r, p: r.player, host };
@@ -84,9 +84,9 @@ test('a tightly bunched pack separates on the inner bend and at both lap boundar
   }
 });
 
-test('finish adjudication uses the separated positions', () => {
+test('lap gates use the separated positions', () => {
   const { r, p, host } = setup(), finish = 3 * TRACK_LENGTH;
-  Object.assign(r, { progress: finish - 0.15, nextGate: 12, hearseGate: 12, gatesPassed: 11, immune: 2 });
+  Object.assign(r, { progress: finish - 0.15, nextGate: 12, gatesPassed: 11, immune: 2 });
   Object.assign(p, { s: r.progress, lane: 0, speed: 45 });
   Object.assign(host, { s: finish + 23, lane: 0, homeLane: 0, speed: 0, cruise: 0 });
   step(r);
@@ -95,7 +95,7 @@ test('finish adjudication uses the separated positions', () => {
   assert.ok(r.progress < finish);
 });
 
-test("body shells stay apart through a complete race", () => {
+test("body shells stay apart through a full pursuit", () => {
   const r = makeRace();
   for (let tick = 0; tick < 60 * 180; tick++) {
     for (let i = 0; i < r.cars.length; i++) {
@@ -107,7 +107,7 @@ test("body shells stay apart through a complete race", () => {
         if (shellsOverlap(a, b)) assert.fail(a.id + " overlaps " + b.id + " on tick " + tick);
       }
     }
-    if (["won", "lost"].includes(r.phase)) break;
+    if (r.phase === "lost") break;
     if (r.phase === "clutch") {
       const coupe = r.targets.findIndex(c => c.kind === "coupe");
       if (coupe >= 0) r.selected = coupe;
@@ -116,6 +116,6 @@ test("body shells stay apart through a complete race", () => {
     const steer = r.possessionCount ? Math.max(-1, Math.min(1, (-40 - r.player.lane) * 0.18)) : 0;
     step(r, { gas: true, steer });
   }
-  assert.ok(["won", "lost"].includes(r.phase));
+  assert.ok(r.phase === "lost");
   assert.ok(r.possessionCount >= 2);
 });

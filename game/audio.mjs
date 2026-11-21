@@ -9,12 +9,14 @@ const MOTORS = {
   wagon: [38, 35, 320, 1.99],
   coupe: [48, 54, 540, 2.02],
   tow: [29, 27, 235, 2.99],
+  ambulance: [38, 43, 390, 2.49],
   hearse: [33, 35, 290, 1.49],
 };
 const STINGS = {
   lap: [52, 55, 59],
   shortcut: [59, 64, 67],
   recover: [43, 47, 52],
+  draftReady: [64, 71, 76],
   won: [52, 55, 57, 59, 64],
   lost: [55, 54, 52, 40],
 };
@@ -195,7 +197,8 @@ export function createAudio() {
     const { kind, speed } = state.player;
     const pace = Math.min(1, Math.max(0, speed) / 140);
     const [idle, range, cutoff, harmonic] = MOTORS[kind] ?? MOTORS.wagon;
-    const current = shiftSpeeds.findLastIndex((boundary) => speed >= boundary);
+    let current = 0;
+    while (current + 1 < shiftSpeeds.length && speed >= shiftSpeeds[current + 1]) current++;
     if (driver !== state.player || phase !== 'drive' || muted) {
       gear = Math.max(0, current);
       driver = phase === 'drive' && !muted ? state.player : null;
@@ -215,7 +218,8 @@ export function createAudio() {
     target(roadFilter.frequency, 340 + pace * pace * 1320, 0.15);
     target(roadGain.gain, 0.009 + 0.103 * pace ** 2, 0.15);
 
-    const gap = Math.abs((state.hearse?.s ?? Infinity) - state.player.s);
+    const gap = Math.min(Math.abs((state.hearse?.s ?? Infinity) - state.player.s),
+      Math.abs((state.hound?.s ?? Infinity) - state.player.s));
     const close = Math.max(0, 1 - gap / 100);
     target(rival.frequency, 40 + 25 * close + Math.sin(at * (4 + close * 5)) * (1 + 3 * close));
     target(rivalGain.gain, phase === 'drive' && kind !== 'hearse' ? 0.089 * close ** 1.4 : 0);
@@ -227,7 +231,7 @@ export function createAudio() {
     }
   }
 
-  function event(type) {
+  function event(type, detail = {}) {
     if (!ctx || ctx.state !== 'running' || muted || suspended) return;
     const at = ctx.currentTime + 0.012;
     if (type === 'start' || type === 'restart') {
@@ -249,6 +253,47 @@ export function createAudio() {
     } else if (type === 'impact') {
       burst(at, 0.16, 730, 'lowpass', 0.22, effects);
       tone(at, 0.16, 76, 33, 'triangle', 0.19, effects);
+    } else if (type === 'warning') {
+      duckUntil = at + 0.7;
+      if (detail.kind === 'bell') {
+        for (const delay of [0, 0.25]) {
+          tone(at + delay, 0.63, 411, 392, 'sine', 0.24, effects);
+          tone(at + delay, 0.27, 1061, 1002, 'triangle', 0.08, effects);
+        }
+      } else {
+        for (const delay of [0, 0.22]) {
+          burst(at + delay, 0.15, 710, 'bandpass', 0.15, effects);
+          tone(at + delay, 0.2, 113, 173, 'sawtooth', 0.11, effects);
+        }
+      }
+    } else if (type === 'strike') {
+      duckUntil = at + 0.38;
+      burst(at, 0.19, detail.kind === 'ram' ? 960 : 480, 'bandpass', 0.2, effects);
+      tone(at, 0.36, detail.kind === 'ram' ? 115 : 294, 46, 'triangle', 0.21, effects);
+    } else if (type === 'evade') {
+      burst(at, 0.18, 1750, 'bandpass', 0.10, effects);
+      tone(at + 0.06, 0.14, 443, 665, 'triangle', 0.1, effects);
+    } else if (type === 'relay') {
+      const pitch = hz(60 + Math.min(5, detail.chain || 1) * 2);
+      tone(at, 0.13, pitch, pitch, 'square', 0.052, effects);
+      tone(at + 0.1, 0.25, pitch * 1.5, pitch * 2, 'triangle', 0.15, effects);
+    } else if (type === 'ability') {
+      duckUntil = at + 0.44;
+      if (detail.kind === 'ambulance') {
+        tone(at, 0.24, 520, 710, 'triangle', 0.17, effects);
+        tone(at + 0.2, 0.36, 710, 520, 'triangle', 0.15, effects);
+      } else if (detail.kind === 'tow') {
+        burst(at, 0.16, 2700, 'highpass', 0.13, effects);
+        tone(at, 0.29, 740, 156, 'triangle', 0.14, effects);
+        tone(at + 0.24, 0.18, 173, 111, 'square', 0.07, effects);
+      } else if (detail.kind === 'wagon') {
+        burst(at, 0.11, 900, 'bandpass', 0.12, effects);
+        tone(at, 0.28, 116, 107, 'triangle', 0.18, effects);
+        tone(at + 0.08, 0.28, 232, 214, 'sine', 0.14, effects);
+      } else if (detail.kind === 'coupe') {
+        burst(at, 0.34, 2200, 'bandpass', 0.13, effects);
+        tone(at, 0.37, 105, 417, 'sawtooth', 0.085, effects);
+      }
     } else if (type === 'hearseHit') {
       burst(at, 0.14, 630, 'lowpass', 0.075, effects);
     } else if (type === 'tow') {

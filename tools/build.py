@@ -6,7 +6,7 @@ import re
 from zipfile import ZipFile, ZIP_DEFLATED, ZipInfo
 
 ROOT = Path(__file__).resolve().parents[1]
-MODULES = ("sim", "render", "audio", "main")
+MODULES = ("moves", "sim", "render", "audio", "main")
 
 def data_url(path, mime):
     payload = base64.b64encode(path.read_bytes()).decode("ascii")

@@ -10,6 +10,8 @@ import {
   TRACK_LENGTH,
 } from '../game/sim.mjs';
 
+import { useAbility, startDraftJump } from '../game/moves.mjs';
+
 function driveUntil(r, done, limit = 12, input = { gas: true }) {
   for (let i = 0; i < limit * 60 && !done(); i++) step(r, input);
   assert.ok(done());
@@ -68,18 +70,24 @@ test('an abandoned wreck slows the hearse', () => {
   driveUntil(r, () => r.events.some((e) => e.type === 'hearseHit'));
   assert.ok(r.hearse.speed < incoming * 0.5);
 });
-test('three-lap race can be won via staged theft and ordinary driving inputs', () => {
+test('clean draft transfers and abilities can carry a run beyond the fourth lap', () => {
   const r = makeRace();
-  for (let i = 0; i < 60 * 170 && !['won', 'lost'].includes(r.phase); i++) {
-    if (r.phase === 'clutch') possess(r);
+  for (let tick = 0; tick < 180 * 60 && r.lap < 5 && r.phase !== 'lost'; tick++) {
+    if (r.phase === 'clutch') {
+      r.selected = r.targets.reduce((best, c, i) => c.topSpeed > r.targets[best].topSpeed ? i : best, 0);
+      possess(r);
+    }
+    if (!r.cooldown) useAbility(r);
+    if (r.hasTarget && r.charge === 1) startDraftJump(r);
     const steer = r.possessionCount ? Math.max(-1, Math.min(1, (-16 - r.player.lane) * 0.12)) : 0;
     step(r, { gas: true, steer });
   }
-  assert.equal(r.phase, 'won');
-  assert.equal(r.lap, 3);
-  assert.ok(r.possessionCount > 0);
+  assert.equal(r.lap, 5);
+  assert.ok(r.furthest >= 4 * TRACK_LENGTH);
+  assert.ok(r.draftJumps > 0 && r.soul > 0);
+  assert.equal(r.difficulty, 4);
 });
-test('braking to a stop allows the hearse to finish first', () => {
+test('braking to a stop lets the hearse pull ahead until soul runs out', () => {
   const r = makeRace();
   driveUntil(r, () => r.phase === 'lost', 180, { brake: true });
   assert.equal(r.player.speed, 0);
@@ -129,10 +137,10 @@ test('a heavier chassis delivers more momentum and takes less damage in the same
   assert.ok(tow.impulse > wagon.impulse && wagon.impulse > coupe.impulse);
   assert.ok(coupe.damage > wagon.damage && wagon.damage > tow.damage);
 });
-function atFinish(playerGap, hearseGap) {
+function atLine(playerGap, hearseGap) {
   const r = makeRace();
   const line = TRACK_LENGTH * 3;
-  r.nextGate = r.hearseGate = 12;
+  r.nextGate = 12;
   r.gatesPassed = 11;
   r.lap = 3;
   r.immune = 2;
@@ -143,36 +151,33 @@ function atFinish(playerGap, hearseGap) {
   r.hearse.speed = r.hearse.cruise = 48;
   return r;
 }
-test('the earlier crossing wins when both cars finish in the same simulation step', () => {
-  for (const [playerGap, hearseGap, expected] of [
-    [0.5, 0.1, 'lost'],
-    [0.1, 0.5, 'won'],
-  ]) {
-    const r = atFinish(playerGap, hearseGap);
+test('crossing the old finish starts lap four regardless of which car crosses first', () => {
+  for (const [playerGap, hearseGap] of [[0.5, 0.1], [0.1, 0.5]]) {
+    const r = atLine(playerGap, hearseGap);
     step(r, { gas: true });
-    assert.equal(r.phase, expected);
-    assert.ok(r.time < 1 / 60);
+    assert.equal(r.phase, 'drive');
+    assert.equal(r.lap, 4);
+    assert.equal(r.difficulty, 3);
   }
 });
-test('a jump across the line scores at landing, after any earlier hearse crossing', () => {
-  for (const [hearseGap, expected] of [
-    [0.02, 'lost'],
-    [0.06, 'won'],
-  ]) {
-    const r = atFinish(5, hearseGap);
-    r.phase = 'jump';
-    r.player.wreck = true;
-    r.player.speed = 0;
-    r.timer = 0.01;
-    const host = r.cars.find((c) => c.kind === 'coupe' && !c.wreck);
-    host.s = TRACK_LENGTH * 3 + 3;
-    r.targets = [host];
-    step(r, {});
-    assert.equal(r.phase, expected);
-  }
+test('a jump across the lap line scores at landing', () => {
+  const r = atLine(5, 2);
+  r.phase = 'jump';
+  r.jumpMode = 'crash';
+  r.player.wreck = true;
+  r.player.speed = 0;
+  r.timer = 0.01;
+  const host = r.cars.find((c) => !c.enemy && c.kind === 'coupe' && !c.wreck);
+  host.s = TRACK_LENGTH * 3 + 3;
+  r.targets = [host];
+  step(r, {});
+  assert.equal(r.phase, 'drive');
+  assert.equal(r.player, host);
+  assert.equal(r.lap, 4);
+  assert.equal(r.events.filter(e => e.type === 'lap').length, 1);
 });
 test('a rolling wreck and relief spawn earn no forward progress during a tow', () => {
-  const r = atFinish(0.1, 400);
+  const r = atLine(0.1, 400);
   r.phase = 'clutch';
   r.player.wreck = true;
   r.player.damage = 100;
@@ -185,5 +190,6 @@ test('a rolling wreck and relief spawn earn no forward progress during a tow', (
   driveUntil(r, () => r.phase === 'drive', 2);
   assert.ok(r.player.s < TRACK_LENGTH * 3 && r.nextGate === 12);
   step(r, { gas: true });
-  assert.equal(r.phase, 'won');
+  assert.equal(r.phase, 'drive');
+  assert.equal(r.lap, 4);
 });
