@@ -67,7 +67,7 @@ The build writes `dist/dead-mans-clutch-itch.zip` and `dist/play-dead-mans-clutc
 
 The tests cover vehicle contact through crowded bends, ordered lap gates, soul drain and recovery, rival strike timing, dodges, guards, all four powers, jump cancellation, chain expiry, seed replay, bounded vehicle count and survival beyond lap four.
 
-An automated Chromium playtest of the release played through the former finish line into lap five at 9.81 km. That run made 23 transfers, used all four bodies, and linked five clean jumps. A stationary run depleted its soul in 22.3 seconds. A skilled run initially put the hearse a full lap behind, which prompted the physical catch-up behavior. The downloadable game was also exercised inside a nested iframe with keyboard, pointer and emulated touch input, including holding the gas with one finger while using a power or choosing a windshield with another.
+In an automated Chromium playtest of the published zip, the driver passed the former finish line and entered lap four at 7.36 km with 80% soul. The run used all four chassis abilities, took hits from both rivals, and linked five clean jumps. A stationary run depleted its soul in 22.3 seconds. A skilled run initially put the hearse a full lap behind, which prompted the physical catch-up behavior. The downloadable game was also exercised inside a nested iframe with keyboard, pointer and emulated touch input, including holding the gas with one finger while using a power or choosing a windshield with another.
 
 ## Suggested itch.io listing
 
