@@ -2,9 +2,9 @@
 
 **Beat your own hearse to the cemetery and you get your body back.**
 
-A single-player browser racer made for the **Bounce Back!** game-jam theme. Drive three laps of Shade County Oval. Hit a wreck hard and time slows long enough to steal a nearby vehicle. Your old car keeps rolling. It can punch through the hay gate at Turn Two, shove another wreck, or block the hearse on the next lap.
+A single-player browser racer made for the **Bounce Back!** game-jam theme. Drive three laps of Shade County Oval. Your starter wagon tops out at 92 mph. The hearse cruises at 134. Trade paint with the 55-car traffic field, then use a hard hit to steal a faster windshield. Your old car keeps rolling. It can punch through the hay gate at Turn Two, shove another wreck, or block the hearse on the next lap.
 
-![A helmeted ghost and the number thirteen muscle car on the starting screen](press/starting-grid.png)
+![A helmeted ghost and the number thirteen muscle car on the starting screen](press/starting-grid.jpg)
 
 ## Controls
 
@@ -35,7 +35,7 @@ Build with Python 3.8+ and run the simulation checks with Node 20+.
 
 ```sh
 python3 tools/build.py
-node --test tests/sim.test.mjs
+node --test tests/*.test.mjs
 ```
 
 The build writes `dist/dead-mans-clutch-itch.zip` and `dist/play-dead-mans-clutch.html`. The zip contains the standalone build as its root `index.html` and a license file. The build embeds the original art, font, sound synthesis and game code. It needs no package install, CDN, server API, special response headers, or shared memory.
@@ -48,9 +48,13 @@ The three cars reward different lines. The coupe accelerates and changes lanes f
 
 ## Release playtest
 
-The packaged game was extracted and served under a nested path inside a local iframe. Chromium drove a three-lap win in 2:09.3, lost to the hearse on a separate run, and continued after a totaled-car tow. Both keyboard targeting and a mouse click on the moving windshield were exercised. The browser recorded zero console errors and requested only the local frame and game document. A separate 960 × 540 real-time sample through the opening pileup recorded a 16.7 ms median and 95th-percentile frame interval. The Web Audio output was active after starting and silent when muted. Fourteen simulation checks cover race outcomes, possession, collision mass, persistent wrecks, the shortcut and same-frame finishes.
+The grid has 57 running cars and three persistent wrecks. Faster packs catch backmarkers and drivers look for passing lanes. A bumper rub costs speed. A hard rear-end impact or sideswipe opens a clutch window. Each windshield shows its top speed. The coupe reaches 170 mph.
 
-The first corner was tuned so two cars remain reachable and the abandoned wagon can carry its momentum into the hay gate. The gap display and live track map were added after a race where the lead was hard to read. With more time, the next priority would be playtests with first-time drivers to tune the five-second clutch window and the challenge of the final lap.
+The first edition could be won in the starter on a clean inside line. On the longer oval, the starter loses even with clear track. Holding gas on the opening straight now reaches a moving backmarker in about 11 seconds. Fixed 60 Hz physics keeps that opening consistent on different refresh rates. The revised course keeps its own best time.
+
+Chromium played the extracted release in an iframe. Taking the coupe and working through traffic won in 1:58.0. Declining all six transfer windows lost in 1:57.8. The game made no external requests and logged no browser errors.
+
+The 24-test regression suite checks contact across the start line, clearance on the inner bank, recovery into traffic, matching-speed sideswipes, and an entire race checked for overlapping bodywork on every physics tick. Trackside fences, chalk stripes, dust and engine shifts convey the acceleration. The camera settles during possession.
 
 ## Suggested itch.io listing
 
@@ -66,10 +70,10 @@ The first corner was tuned so two cars remain reachable and the abandoned wagon 
 
 **Screenshot moments**
 
-- [Starting grid](press/starting-grid.png) — the illustrated cover and county speedway race card.
-- [Windshield jump](press/windshield-jump.png) — the ghost between the battered wagon and its next ride.
-- [Turn Two](press/turn-two.png) — lap two with the shortcut broken open.
-- [The cemetery finish](press/cemetery-finish.png) — the coupe and hearse on their last approach to the stripe.
+- [Starting grid](press/starting-grid.jpg) — the illustrated cover and county speedway race card.
+- [Windshield jump](press/windshield-jump.jpg) — the ghost between the battered wagon and its next ride.
+- [Turn Two](press/turn-two.jpg) — lap two with the shortcut broken open.
+- [The cemetery finish](press/cemetery-finish.jpg) — the coupe and hearse on their last approach to the stripe.
 
 ## Credits and license
 

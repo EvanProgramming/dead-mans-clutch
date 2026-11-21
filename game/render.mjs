@@ -1,4 +1,4 @@
-import { trackPoint, TRACK_LENGTH } from './sim.mjs';
+import { bodyYaw, trackPoint, TRACK_LENGTH } from './sim.mjs';
 
 const ink = '#181b18',
   ivory = '#f3dfb1',
@@ -164,7 +164,7 @@ function ground() {
   const w = Math.ceil(Math.max(...points.map((p) => p.x)) + pad - x0),
     h = Math.ceil(Math.max(...points.map((p) => p.y)) + pad - y0);
   const a = document.createElement('canvas'),
-    res = 2;
+    res = Math.min(2, 4096 / w, 4096 / h);
   a.width = w * res;
   a.height = h * res;
   const c = a.getContext('2d');
@@ -251,6 +251,19 @@ function ground() {
     c.rotate(p.angle);
     fn();
     c.restore();
+  }
+  // Paired chalk ticks and catch-fence shadows give the eye fixed distance markers.
+  for (let s = 0; s < TRACK_LENGTH; s += 21) {
+    for (const side of [-1, 1]) {
+      at(s, side * 61, () => {
+        poly(c, [-4, 0, 1.4, 0, 3.4, side * 1.4, -1.8, side * 1.4], '#e1af7c');
+      });
+      at(s, side * 73, () => {
+        line(c, 0, 0, 6, side * -6, '#674f38', 1.4);
+        line(c, 0, 0, -1, side * 4, ink, 2);
+        rect(c, -2, side * 4 - 0.6, 2.8, 1.3, '#debd86');
+      });
+    }
   }
   for (let s = 70; s < TRACK_LENGTH; s += 183) {
     at(s, 99, () => {
@@ -365,12 +378,16 @@ export function createRenderer(canvas) {
     const shakeX = Math.cos(age * 117) * shock * 3.5,
       shakeY = Math.sin(age * 145) * shock * 2.4;
     const picking = r.phase === 'clutch' || r.phase === 'jump';
-    const pivot = trackPoint(r.player.s, r.player.lane * 0.23),
+    const rush = !reduce.matches && r.phase === 'drive'
+      ? Math.max(0, Math.min(1, (r.player.speed - 36) / 89)) : 0;
+    const lead = picking ? 0 : 5 + 13 * rush;
+    const pivot = trackPoint(r.player.s + lead, r.player.lane * 0.31),
       follow = trackPoint(r.player.s + 22, 0);
     const tilt = w / h > 1.18 ? -0.25 : -1.25;
     let z = Math.min(w / (w / h > 1.18 ? 270 : 160), h / (w / h > 1.18 ? 178 : 250)),
       x = pivot.x,
       y = pivot.y;
+    if (!picking) z *= 1.09 + rush * 0.04;
     const angle = tilt - follow.angle;
     if (picking && r.targets.length) {
       const ext = [
@@ -476,22 +493,23 @@ export function createRenderer(canvas) {
       const p = trackPoint(v.s, v.lane),
         pos = screen(p);
       if (pos.x < -75 || pos.x > w + 75 || pos.y < -75 || pos.y > h + 75) continue;
-      const a = p.angle - (v.lateralSpeed || 0) * 0.01 + (v.wreck ? 0.22 : 0);
+      const a = p.angle + bodyYaw(v);
       c.save();
       c.translate(p.x, p.y);
       c.rotate(a);
       if (v.speed > 9 && !v.wreck) {
-        const phase = tick * (v.speed * 0.014 + 0.4) + idx * 0.73;
-        for (let j = 0; j < 14; j++) {
-          const t = (phase + j * 0.071) % 1,
-            side = j % 2 ? 1 : -1;
-          c.globalAlpha = (1 - t) * 0.3;
-          const xx = -9 - t * (v.speed * 0.6 + 7),
-            yy = side * (3 + t * 3) + Math.sin(j * 19 + t * 4) * t * 4;
-          c.fillStyle = j % 3 ? '#e9bd8a' : '#593e2a';
-          c.beginPath();
-          c.ellipse(xx, yy, 0.4 + t * 2, 0.3 + t * 1.3, 0, 0, Math.PI * 2);
-          c.fill();
+        const pace = Math.min(1, v.speed / 125);
+        const phase = v.s / 28 + idx * 0.73;
+        const count = reduce.matches ? 6 : 16;
+        for (let j = 0; j < count; j++) {
+          const u = phase + j / count;
+          const t = u - Math.floor(u), side = j % 2 ? 1 : -1;
+          const x = -10 - t * (11 + 31 * pace);
+          const y = side * (3 + t * 4) + Math.sin(j * 17 + t * 5) * t * 3;
+          const spread = 0.5 + t * 2.8;
+          c.globalAlpha = (1 - t) * (reduce.matches || picking ? 0.17 : 0.48);
+          poly(c, [x + spread, y, x, y - spread * 0.6, x - spread * (2 + pace),
+            y + spread * 0.15, x - spread, y + spread * 0.65], j % 4 ? '#efc08a' : '#805234');
         }
         c.globalAlpha = 1;
       }
@@ -548,6 +566,47 @@ export function createRenderer(canvas) {
       c.restore();
     }
     c.restore();
+    if (!picking && !reduce.matches) {
+      // Project the elevated top rail outwards from the lens; its feet stay on the ground.
+      const first = Math.floor((r.player.s - 290) / 34) * 34;
+      for (const side of [-1, 1]) {
+        let previous;
+        c.beginPath();
+        for (let s = first; s <= first + 580; s += 34) {
+          const foot = screen(trackPoint(s, side * 77));
+          const head = { x: foot.x + (foot.x - w / 2) * 0.16,
+            y: foot.y + (foot.y - h / 2) * 0.16 };
+          c.moveTo(foot.x, foot.y);
+          c.lineTo(head.x, head.y);
+          if (previous) c.lineTo(previous.x, previous.y);
+          previous = head;
+        }
+        c.strokeStyle = '#27291f';
+        c.lineWidth = Math.max(1.4, cam.z * 0.78);
+        c.stroke();
+      }
+    }
+    // Printed slipstream hatching passes across the outer margins along the road tangent.
+    if (rush > 0.18) {
+      const direction = playerPoint.angle + cam.angle;
+      c.save();
+      c.translate(w / 2, h / 2);
+      c.rotate(direction);
+      const along = Math.abs(Math.cos(direction)) * w + Math.abs(Math.sin(direction)) * h;
+      const across = Math.abs(Math.sin(direction)) * w + Math.abs(Math.cos(direction)) * h;
+      const period = along * 0.38;
+      c.globalAlpha = rush * 0.31;
+      for (let j = 0; j < 8; j++) {
+        const y = (j % 2 ? -1 : 1) * across * (0.31 + ((j * 7) % 5) * 0.035);
+        const phase = r.player.s * cam.z * (1.38 + j * 0.025) + j * period * 0.61;
+        const offset = ((phase % period) + period) % period;
+        for (let x = -along / 2 - offset; x < along / 2; x += period) {
+          poly(c, [x, y, x + (7 + j * 2) * rush, y - 0.9, x + (22 + j * 4) * rush, y],
+            j % 3 ? '#f3d19c' : '#23241b');
+        }
+      }
+      c.restore();
+    }
     const soft = c.createRadialGradient(
       w * 0.5,
       h * 0.48,

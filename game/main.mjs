@@ -13,6 +13,7 @@ const names = {
   hearse: 'The Hearse',
 };
 const storageKey = 'dead-mans-clutch.v1.';
+const bestKey = 'best.long-oval';
 function read(key) {
   try {
     return localStorage.getItem(storageKey + key);
@@ -49,7 +50,7 @@ let primaryAction,
   secondaryAction,
   muted = read('mute') === 'yes';
 function storedBest() {
-  const n = Number(read('best'));
+  const n = Number(read(bestKey));
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 let best = storedBest();
@@ -107,7 +108,7 @@ function handbook() {
     'help',
     'DRIVER’S HANDBOOK',
     'How to play',
-    '<p>Beat the hearse over three laps. Crash hard and time slows. Aim at a marked windshield and release to steal the car. Your old ride keeps rolling.</p><div class="controls"><div><span>Accelerate / brake</span><kbd>W / S · ↑ / ↓</kbd></div><div><span>Steer across the track</span><kbd>A / D · ← / →</kbd></div><div><span>Pick a windshield</span><kbd>AIM · ← / →</kbd></div><div><span>Jump / stay</span><kbd>CLICK OR SPACE / X</kbd></div><div><span>Pause / restart / mute</span><kbd>ESC / R / M</kbd></div></div>',
+    '<p>Your starter wagon is limping. Beat the hearse over three laps by stealing faster rides. Crash hard and time slows. Aim at a marked windshield and release to steal the car. Your old ride keeps rolling.</p><div class="controls"><div><span>Accelerate / brake</span><kbd>W / S · ↑ / ↓</kbd></div><div><span>Steer across the track</span><kbd>A / D · ← / →</kbd></div><div><span>Pick a windshield</span><kbd>AIM · ← / →</kbd></div><div><span>Jump / stay</span><kbd>CLICK OR SPACE / X</kbd></div><div><span>Pause / restart / mute</span><kbd>ESC / R / M</kbd></div></div>',
     'START ENGINE',
     start,
     'BACK',
@@ -178,7 +179,7 @@ function result(win) {
   const oldBest = best;
   if (win && (!best || race.time < best)) {
     best = race.time;
-    write('best', String(best));
+    write(bestKey, String(best));
   }
   const count = race.possessionCount;
   openDialog(
@@ -230,7 +231,7 @@ function paint(dt) {
   renderer.draw(race, dt);
   $('lap').textContent = race.lap + ' / 3';
   $('timer').textContent = time(race.time);
-  const gap = (race.progress - race.hearse.s) / 48;
+  const gap = (race.progress - race.hearse.s) / race.hearse.cruise;
   $('gapLabel').textContent =
     Math.abs(gap) < 0.12 ? 'WHEEL TO WHEEL' : gap > 0 ? 'YOU LEAD' : 'HEARSE LEADS';
   $('gap').textContent = Math.abs(gap).toFixed(1) + 's';
@@ -244,14 +245,16 @@ function paint(dt) {
   );
   $('damage').hidden = !race.player.damage;
   $('damage').textContent = 'DAMAGE ' + race.player.damage + '%';
-  $('chassis').textContent = names[race.player.kind].toUpperCase();
+  $('chassis').textContent = race.player.id === 'starter' ? 'LIMPING WAGON' : names[race.player.kind].toUpperCase();
   $('speed').textContent = Math.round(race.player.speed * 1.37) + ' MPH';
   $('marker').style.left =
     Math.min(100, Math.max(0, ((race.progress % TRACK_LENGTH) / TRACK_LENGTH) * 100)) + '%';
   const picking = race.phase === 'clutch';
   $('clutch').hidden = !picking;
   if (picking) {
-    $('targetname').textContent = race.selected + 1 + ' / ' + names[race.targets[race.selected].kind];
+    const host = race.targets[race.selected];
+    $('targetname').textContent = race.selected + 1 + ' / ' + names[host.kind];
+    $('targetPace').textContent = Math.round(host.topSpeed * 1.37) + ' MPH TOP SPEED';
     $('stay').innerHTML = race.player.damage >= 100 ? 'Tow <kbd>X</kbd>' : 'Stay <kbd>X</kbd>';
     $('windowbar').style.transform = 'scaleX(' + Math.max(0, race.timer / race.clutchDuration) + ')';
   }
@@ -271,8 +274,8 @@ function tick(now) {
     coachUntil -= dt;
     noticeLeft -= dt;
     if (noticeLeft <= 0) $('banner').hidden = true;
-    if (race.phase === 'drive' && race.time > 4.2 && race.time < 8.1 && !helpLeft) {
-      teach('Hit the smoking wagon to steal another ride.', 3.5);
+    if (race.phase === 'drive' && race.player.id === 'starter' && race.time > 3.8 && !helpLeft) {
+      teach('Your wagon is losing ground. A hard hit lets you steal a faster ride.', 5);
       helpLeft = 1;
     }
     events();
@@ -377,7 +380,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) pause();
 });
 window.addEventListener('storage', (e) => {
-  if (e.key === storageKey + 'best') {
+  if (e.key === storageKey + bestKey) {
     best = storedBest();
     showBest();
   }

@@ -23,6 +23,8 @@ const hz = (note) => 440 * 2 ** ((note - 69) / 12);
 export function createAudio() {
   let ctx, master, score, engine, effects, guitar, noise;
   let motor, overtone, rival, engineFilter, motorGain, rivalGain;
+  let roadGain, roadFilter, driver, gear = 0, shiftUntil = 0;
+  const shiftSpeeds = [0, 38, 66, 89, 112, 137];
   let step = 0;
   let next = 0;
   let muted = false;
@@ -77,6 +79,15 @@ export function createAudio() {
     noise = ctx.createBuffer(1, ctx.sampleRate / 2, ctx.sampleRate);
     const samples = noise.getChannelData(0);
     for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
+
+    roadGain = gain(0, engine);
+    roadFilter = filter('bandpass', 680, roadGain);
+    roadFilter.Q.value = 0.6;
+    const rolling = ctx.createBufferSource();
+    rolling.buffer = noise;
+    rolling.loop = true;
+    rolling.connect(roadFilter);
+    rolling.start();
 
     motorGain = gain(0, engine);
     engineFilter = filter('lowpass', 440, motorGain);
@@ -168,6 +179,7 @@ export function createAudio() {
         target(engine.gain, 0, 0.02);
       }
       playing = false;
+      driver = null;
       return;
     }
     if (!playing || next < at) next = at + 0.015;
@@ -181,13 +193,27 @@ export function createAudio() {
     target(engine.gain, airborne ? 0 : ejected ? 0.16 : 1, ejected ? 0.02 : 0.07);
 
     const { kind, speed } = state.player;
-    const pace = Math.min(1, Math.max(0, speed) / 54);
+    const pace = Math.min(1, Math.max(0, speed) / 140);
     const [idle, range, cutoff, harmonic] = MOTORS[kind] ?? MOTORS.wagon;
-    const pitch = idle + pace * range;
-    target(motor.frequency, pitch, 0.05);
-    target(overtone.frequency, pitch * harmonic, 0.05);
-    target(engineFilter.frequency, cutoff + pace * 250);
-    target(motorGain.gain, 0.038 + pace * 0.048);
+    const current = shiftSpeeds.findLastIndex((boundary) => speed >= boundary);
+    if (driver !== state.player || phase !== 'drive' || muted) {
+      gear = Math.max(0, current);
+      driver = phase === 'drive' && !muted ? state.player : null;
+      shiftUntil = 0;
+    } else if (current > gear || (current < gear && speed < shiftSpeeds[gear] - 5)) {
+      gear = Math.max(0, current);
+      shiftUntil = at + 0.115;
+      burst(at, 0.06, 420, 'bandpass', 0.059, engine);
+    }
+    const rev = Math.max(0, Math.min(1, (speed - shiftSpeeds[gear]) /
+      ((shiftSpeeds[gear + 1] ?? 170) - shiftSpeeds[gear])));
+    const pitch = idle + range * (0.25 * pace + (gear ? 0.48 : 0) + rev * 0.86);
+    target(motor.frequency, pitch, 0.06);
+    target(overtone.frequency, pitch * harmonic, 0.055);
+    target(engineFilter.frequency, cutoff + rev * 460 + pace * 160);
+    target(motorGain.gain, (0.04 + pace * 0.066) * (at < shiftUntil ? 0.42 : 1));
+    target(roadFilter.frequency, 340 + pace * pace * 1320, 0.15);
+    target(roadGain.gain, 0.009 + 0.103 * pace ** 2, 0.15);
 
     const gap = Math.abs((state.hearse?.s ?? Infinity) - state.player.s);
     const close = Math.max(0, 1 - gap / 100);
@@ -264,6 +290,7 @@ export function createAudio() {
     suspend() {
       playing = false;
       suspended = true;
+      driver = null;
       if (!ctx) return;
       target(score.gain, 0, 0.014);
       target(engine.gain, 0, 0.014);

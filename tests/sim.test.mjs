@@ -23,16 +23,16 @@ test('oval is continuous and repeats for negative and multi-lap positions', () =
     assert.ok(Math.hypot(a.x - c.x, a.y - c.y) < 0.002);
   }
 });
-test('signature crash leaves a wreck and offers two moving hosts before twelve seconds', () => {
+test('signature crash leaves a wreck and offers multiple moving hosts before twelve seconds', () => {
   const r = makeRace(),
     first = r.player;
   driveUntil(r, () => r.phase === 'clutch');
   assert.ok(first.wreck);
-  assert.deepEqual(
-    r.targets.map((c) => c.kind),
-    ['coupe', 'tow'],
-  );
-  chooseTarget(r, 1);
+  assert.ok(r.targets.every(host => host.speed > 0 && !host.wreck));
+  assert.equal(r.targets[r.selected].kind, 'coupe');
+  const tow = r.targets.findIndex(host => host.kind === 'tow');
+  assert.ok(tow >= 0);
+  chooseTarget(r, tow - r.selected);
   assert.ok(possess(r));
   driveUntil(r, () => r.phase === 'drive');
   assert.equal(r.player.kind, 'tow');
@@ -62,10 +62,11 @@ test('breaking the hay gate opens the inside line for the hearse', () => {
 test('an abandoned wreck slows the hearse', () => {
   const r = makeRace();
   const wreck = r.cars.find((c) => c.wreck);
+  const incoming = r.hearse.speed;
   wreck.s = r.hearse.s + 16;
   wreck.lane = r.hearse.lane;
   driveUntil(r, () => r.events.some((e) => e.type === 'hearseHit'));
-  assert.ok(r.hearse.speed < 20);
+  assert.ok(r.hearse.speed < incoming * 0.5);
 });
 test('three-lap race can be won via staged theft and ordinary driving inputs', () => {
   const r = makeRace();
@@ -116,7 +117,8 @@ test('a heavier chassis delivers more momentum and takes less damage in the same
     const r = makeRace(),
       wreck = r.cars.find((c) => c.id === 'pileup');
     r.player.kind = kind;
-    r.player.s = wreck.s - 13;
+    r.player.s = wreck.s - 24;
+    r.player.lane = wreck.lane;
     r.player.speed = 41;
     step(r, { gas: true });
     return { impulse: wreck.speed, damage: r.player.damage };
@@ -137,7 +139,8 @@ function atFinish(playerGap, hearseGap) {
   r.player.s = r.progress = line - playerGap;
   r.player.speed = 48;
   r.hearse.s = line - hearseGap;
-  r.hearse.lane = r.hearse.homeLane = 0;
+  r.hearse.lane = r.hearse.homeLane = -40;
+  r.hearse.speed = r.hearse.cruise = 48;
   return r;
 }
 test('the earlier crossing wins when both cars finish in the same simulation step', () => {
